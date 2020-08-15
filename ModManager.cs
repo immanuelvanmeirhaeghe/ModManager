@@ -8,7 +8,7 @@ namespace ModManager
     /// <summary>
     /// ModManager
     /// </summary>
-    class ModManager : MonoBehaviour
+    public class ModManager : MonoBehaviour
     {
         private static ModManager s_Instance;
 
