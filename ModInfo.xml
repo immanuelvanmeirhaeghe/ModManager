@@ -4,7 +4,7 @@
     <EN>ModManager</EN>
   </Name>
   <Description>
-    <EN>ModManager is a manager for activating supported mods in multiplayer.</EN>
+    <EN>ModManager is a mod for Green Hell that aims to be a tool to manage mods in multiplayer.</EN>
   </Description>
-  <Version>1.0.0.0</Version>
+  <Version>1.0.2.0</Version>
 </Mod>

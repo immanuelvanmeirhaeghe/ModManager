@@ -20,7 +20,11 @@
         protected override void OnTextChat(P2PNetworkMessage net_msg)
         {
             string textMessage = net_msg.m_Reader.ReadString();
-            bool isMaster = net_msg.m_Connection.m_Peer.IsMaster();
+            P2PPeer l_P2PPeer = net_msg.m_Connection.m_Peer;
+            ReplicatedLogicalPlayer playerComponent = ReplicatedPlayerHelpers.GetPlayerComponent<ReplicatedLogicalPlayer>(l_P2PPeer);
+            bool isMaster = l_P2PPeer.IsMaster();
+            string p2pPeerName = l_P2PPeer.GetDisplayName();
+
             if (textMessage == $"{ModManager.HostCommandToAllowMods}{ModManager.RID}")
             {
                 if (isMaster)
@@ -34,7 +38,24 @@
                     StoreMessage(ModManager.OnlyHostCanAllowMessage);
                 }
             }
-            base.OnTextChat(net_msg);
+            else if (textMessage == $"{ModManager.HostCommandToAllowCheats}{ModManager.RID}")
+            {
+                if (isMaster)
+                {
+                    ModManager.AllowCheatsForMultiplayer = true;
+                    GreenHellGame.DEBUG = true;
+                    ModManager.SetNewRID();
+                    StoreMessage(ModManager.PermissionWasGrantedMessage);
+                }
+                else
+                {
+                    StoreMessage(ModManager.OnlyHostCanAllowMessage);
+                }
+            }
+            else
+            {
+                StoreMessage(textMessage, p2pPeerName, playerComponent ? playerComponent.GetPlayerColor() : m_NormalColor);
+            }
         }
     }
 }

@@ -6,7 +6,8 @@ using UnityEngine;
 namespace ModManager
 {
     /// <summary>
-    /// ModManager
+    /// ModManager is a mod for Green Hell
+    /// that aims to be a tool to manage mods in multiplayer.
     /// </summary>
     public class ModManager : MonoBehaviour
     {
@@ -28,14 +29,21 @@ namespace ModManager
 
         public static bool AllowModsForMultiplayer = false;
 
+        public static bool AllowCheatsForMultiplayer = false;
+
         public static string ClientCommandToRequestToUseDebugModeMod => "!requestCheats";
 
         public static string ClientCommandToRequestToUseMods => "!requestMods";
 
         public static string HostCommandToAllowMods => "!allowMods";
 
+        public static string HostCommandToAllowCheats => "!allowCheats";
+
         public static string ClientRequestInfoMessage => $"<color =#ff3b3b>System</color>:"
                                                                                    + $"\nSend: <b><color=#36ff68>{ClientCommandToRequestToUseMods}</color></b>"
+                                                                                   + $"\nto request permission to use mods.";
+        public static string ClientRequestToUseDebugModeInfoMessage => $"<color =#ff3b3b>System</color>:"
+                                                                                   + $"\nSend: <b><color=#36ff68>{ClientCommandToRequestToUseDebugModeMod}</color></b>"
                                                                                    + $"\nto request permission to use mods.";
 
         public static void SetNewRID()
@@ -47,9 +55,14 @@ namespace ModManager
 
         public static string HostPlayerName => P2PSession.Instance.GetSessionMaster().GetDisplayName();
 
-        public static string HostRequestMessage => $"Hello <b><color=#03c6fc>{HostPlayerName}</color></b>"
+        public static string HostRequestToUseMods => $"Hello <b><color=#03c6fc>{HostPlayerName}</color></b>"
                                                                                            + $"\nto enable the use of mods for {ClientPlayerName}, send:"
                                                                                            + $"\n<b><color=#36ff68>{HostCommandToAllowMods}{RID}</color></b>"
+                                                                                           + $"\n<color=#ff3b3b>Be aware that this can be used for griefing!</color>";
+
+        public static string HostRequestToUseDebugModeMod => $"Hello <b><color=#03c6fc>{HostPlayerName}</color></b>"
+                                                                                           + $"\nto enable the use of mods for {ClientPlayerName}, send:"
+                                                                                           + $"\n<b><color=#36ff68>{HostCommandToAllowCheats}{RID}</color></b>"
                                                                                            + $"\n<color=#ff3b3b>Be aware that this can be used for griefing!</color>";
 
         public static string RequestWasSentMessage => $"<color=#ff3b3b>System</color>: <b><color=#36ff68>Request sent!</color>";
