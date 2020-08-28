@@ -25,31 +25,31 @@
             bool isMaster = l_P2PPeer.IsMaster();
             string p2pPeerName = l_P2PPeer.GetDisplayName();
 
-            if (textMessage == $"{ModManager.HostCommandToAllowMods}{ModManager.RID}")
+            if (textMessage == ModManager.HostCommandToAllowModsWithRequestId())
             {
                 if (isMaster)
                 {
                     ModManager.AllowModsForMultiplayer = true;
                     ModManager.SetNewRID();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage);
+                    StoreMessage(ModManager.PermissionWasGrantedMessage());
                 }
                 else
                 {
-                    StoreMessage(ModManager.OnlyHostCanAllowMessage);
+                    StoreMessage(ModManager.OnlyHostCanAllowMessage());
                 }
             }
-            else if (textMessage == $"{ModManager.HostCommandToAllowCheats}{ModManager.RID}")
+            else if (textMessage == ModManager.HostCommandToAllowCheatsWithRequestId())
             {
                 if (isMaster)
                 {
                     ModManager.AllowCheatsForMultiplayer = true;
                     GreenHellGame.DEBUG = true;
                     ModManager.SetNewRID();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage);
+                    StoreMessage(ModManager.PermissionWasGrantedMessage());
                 }
                 else
                 {
-                    StoreMessage(ModManager.OnlyHostCanAllowMessage);
+                    StoreMessage(ModManager.OnlyHostCanAllowMessage());
                 }
             }
             else
