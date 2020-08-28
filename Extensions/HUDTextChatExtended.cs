@@ -11,8 +11,8 @@ namespace ModManager
             if (!ModManager.RequestInfoShown)
             {
                 ModManager.RequestInfoShown = true;
-                m_History.StoreMessage(ModManager.ClientRequestInfoMessage);
-                m_History.StoreMessage(ModManager.ClientRequestToUseDebugModeInfoMessage);
+                m_History.StoreMessage(ModManager.ClientRequestInfoMessage(ModManager.ClientCommandRequestToUseMods));
+                m_History.StoreMessage(ModManager.ClientRequestInfoMessage(ModManager.ClientCommandRequestToUseCheats));
             }
             base.OnShow();
             ModManager.Disable = true;
@@ -30,22 +30,22 @@ namespace ModManager
 
             if (fieldTextMessage.Length > 0)
             {
-                if (fieldTextMessage == ModManager.ClientCommandToRequestToUseMods)
+                if (fieldTextMessage == ModManager.ClientCommandRequestToUseMods)
                 {
                     if (string.IsNullOrEmpty(ModManager.RID))
                     {
                         ModManager.SetNewRID();
                     }
-                    P2PSession.Instance.SendTextChatMessage(ModManager.HostRequestToUseMods);
+                    P2PSession.Instance.SendTextChatMessage(ModManager.HostRequestMessage(ModManager.HostCommandToAllowMods, ModManager.RID));
                     m_History.StoreMessage(ModManager.RequestWasSentMessage, "");
                 }
-                else if (fieldTextMessage == ModManager.ClientCommandToRequestToUseDebugModeMod)
+                else if (fieldTextMessage == ModManager.ClientCommandRequestToUseCheats)
                 {
                     if (string.IsNullOrEmpty(ModManager.RID))
                     {
                         ModManager.SetNewRID();
                     }
-                    P2PSession.Instance.SendTextChatMessage(ModManager.HostRequestToUseDebugModeMod);
+                    P2PSession.Instance.SendTextChatMessage(ModManager.HostRequestMessage(ModManager.HostCommandToAllowCheats, ModManager.RID));
                     m_History.StoreMessage(ModManager.RequestWasSentMessage, "");
                 }
                 else
@@ -54,9 +54,9 @@ namespace ModManager
                     if ((bool)m_History)
                     {
                         m_History.StoreMessage(
-                                                                            fieldTextMessage,
+                                                                           fieldTextMessage,
                                                                            ModManager.ClientPlayerName,
-                                                                            ReplicatedLogicalPlayer.s_LocalLogicalPlayer ? ReplicatedLogicalPlayer.s_LocalLogicalPlayer.GetPlayerColor() : HUDTextChatHistory.NormalColor
+                                                                           ReplicatedLogicalPlayer.s_LocalLogicalPlayer ? ReplicatedLogicalPlayer.s_LocalLogicalPlayer.GetPlayerColor() : HUDTextChatHistory.NormalColor
                                                                         );
                     }
                 }
