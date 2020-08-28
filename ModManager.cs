@@ -13,10 +13,6 @@ namespace ModManager
     {
         private static ModManager s_Instance;
 
-        private static Player player;
-
-        private bool showUI;
-
         public ModManager()
         {
             s_Instance = this;
@@ -27,39 +23,46 @@ namespace ModManager
             return s_Instance;
         }
 
-        public static string RID { get; private set; } = string.Empty;
+        public static string RID = string.Empty;
+
+        public static bool RequestInfoShown = false;
+
+        public static bool AllowModsForMultiplayer = false;
+
+        public static bool AllowCheatsForMultiplayer = false;
+
+        public static string ClientCommandToRequestToUseDebugModeMod => "!requestCheats";
+
+        public static string ClientCommandToRequestToUseMods => "!requestMods";
+
+        public static string HostCommandToAllowMods => "!allowMods";
+
+        public static string HostCommandToAllowCheats => "!allowCheats";
+
+        public static string ClientRequestInfoMessage => $"<color =#ff3b3b>System</color>:"
+                                                                                   + $"\nSend: <b><color=#36ff68>{ClientCommandToRequestToUseMods}</color></b>"
+                                                                                   + $"\nto request permission to use mods.";
+        public static string ClientRequestToUseDebugModeInfoMessage => $"<color =#ff3b3b>System</color>:"
+                                                                                   + $"\nSend: <b><color=#36ff68>{ClientCommandToRequestToUseDebugModeMod}</color></b>"
+                                                                                   + $"\nto request permission to use mods.";
+
         public static void SetNewRID()
         {
             RID = Random.Range(1000, 9999).ToString();
         }
 
-        public static bool RequestInfoShown { get; set; } = false;
-
-        public static bool AllowModsForMultiplayer { get; set; } = false;
-
-        public static bool AllowCheatsForMultiplayer { get; set; } = false;
-
-        public static bool Disable { get; set; } = false;
-
-        public static string ClientCommandRequestToUseCheats => "!requestCheats";
-
-        public static string HostCommandToAllowCheats => "!allowCheats";
-
-        public static string ClientCommandRequestToUseMods => "!requestMods";
-
-        public static string HostCommandToAllowMods => "!allowMods";
-
-        public static string ClientRequestInfoMessage(string command) => $"<color =#ff3b3b>System</color>:"
-                                                                                   + $"\nSend: <b><color=#36ff68>{command}</color></b>"
-                                                                                   + $"\nto request permission to use modAPI.";
-
         public static string ClientPlayerName => ReplTools.GetLocalPeer().GetDisplayName();
 
         public static string HostPlayerName => P2PSession.Instance.GetSessionMaster().GetDisplayName();
 
-        public static string HostRequestMessage(string command, string requestId) => $"Hello <b><color=#03c6fc>{HostPlayerName}</color></b>"
+        public static string HostRequestToUseMods => $"Hello <b><color=#03c6fc>{HostPlayerName}</color></b>"
                                                                                            + $"\nto enable the use of mods for {ClientPlayerName}, send:"
-                                                                                           + $"\n<b><color=#36ff68>{command}{requestId}</color></b>"
+                                                                                           + $"\n<b><color=#36ff68>{HostCommandToAllowMods}{RID}</color></b>"
+                                                                                           + $"\n<color=#ff3b3b>Be aware that this can be used for griefing!</color>";
+
+        public static string HostRequestToUseDebugModeMod => $"Hello <b><color=#03c6fc>{HostPlayerName}</color></b>"
+                                                                                           + $"\nto enable the use of mods for {ClientPlayerName}, send:"
+                                                                                           + $"\n<b><color=#36ff68>{HostCommandToAllowCheats}{RID}</color></b>"
                                                                                            + $"\n<color=#ff3b3b>Be aware that this can be used for griefing!</color>";
 
         public static string RequestWasSentMessage => $"<color=#ff3b3b>System</color>: <b><color=#36ff68>Request sent!</color>";
@@ -68,83 +71,6 @@ namespace ModManager
 
         public static string OnlyHostCanAllowMessage => $"<color=#ff3b3b>System</color>: <color=#36ff68>Only the host can grant permission!</color>";
 
-        private static void EnableCursor(bool enabled = false)
-        {
-            CursorManager.Get().ShowCursor(enabled);
-            player = Player.Get();
-            if (enabled)
-            {
-                player.BlockMoves();
-                player.BlockRotation();
-                player.BlockInspection();
-            }
-            else
-            {
-                player.UnblockMoves();
-                player.UnblockRotation();
-                player.UnblockInspection();
-            }
-        }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.Home))
-            {
-                if (!showUI)
-                {
-                    InitData();
-                    EnableCursor(enabled: true);
-                }
-                showUI = !showUI;
-                if (!showUI)
-                {
-                    EnableCursor();
-                }
-            }
-        }
-
-        private void OnGUI()
-        {
-            if (showUI)
-            {
-                InitData();
-                InitSkinUI();
-                InitModUI();
-            }
-        }
-
-        private static void InitData()
-        {
-            player = Player.Get();
-        }
-
-        private static void InitSkinUI()
-        {
-            GUI.skin = ModAPI.Interface.Skin;
-        }
-
-        private void InitModUI()
-        {
-            GUI.Box(new Rect(10f, 680f, 450f, 150f), "ModTools UI - Press HOME to open/close", GUI.skin.window);
-            if (GUI.Button(new Rect(440f, 680f, 20f, 20f), "X", GUI.skin.button))
-            {
-                showUI = false;
-                EnableCursor(false);
-            }
-            if (ReplTools.AmIMaster())
-            {
-                GUI.Label(new Rect(30f, 700f, 200f, 20f), "Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
-                AllowModsForMultiplayer = GUI.Toggle(new Rect(280f, 700f, 20f, 20f), AllowModsForMultiplayer, "");
-
-                GUI.Label(new Rect(30f, 720f, 200f, 20f), "Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
-                AllowCheatsForMultiplayer = GUI.Toggle(new Rect(280f, 720f, 20f, 20f), AllowCheatsForMultiplayer, "");
-            }
-            else
-            {
-                GUI.Label(new Rect(30f, 700f, 330f, 20f), "This manager UI is only visible", GUI.skin.label);
-                GUI.Label(new Rect(30f, 720f, 330f, 20f), "for single player or when host", GUI.skin.label);
-            }
-        }
-
+        public static bool Disable = false;
     }
 }
