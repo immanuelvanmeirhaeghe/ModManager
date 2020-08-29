@@ -2,7 +2,6 @@
 {
     class HUDTextChatHistoryExtended : HUDTextChatHistory
     {
-
         protected override void Awake()
         {
             base.Awake();
@@ -31,7 +30,7 @@
                 {
                     ModManager.AllowModsForMultiplayer = true;
                     ModManager.SetNewRID();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage());
+                    StoreMessage(ModManager.PermissionWasGrantedMessage($"to use mods"));
                 }
                 else
                 {
@@ -43,9 +42,9 @@
                 if (isMaster)
                 {
                     ModManager.AllowCheatsForMultiplayer = true;
-                    GreenHellGame.DEBUG = true;
+                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowCheatsForMultiplayer) && !ModManager.Disable;
                     ModManager.SetNewRID();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage());
+                    StoreMessage(ModManager.PermissionWasGrantedMessage($"to use cheats"));
                 }
                 else
                 {

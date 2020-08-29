@@ -1,6 +1,9 @@
 /*
  * This code was inspired by Moritz. Thank you!
  * */
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace ModManager
@@ -18,6 +21,8 @@ namespace ModManager
         private static Player player;
 
         private bool showUI;
+
+        private static string playerNameToKick = string.Empty;
 
         public ModManager()
         {
@@ -74,40 +79,42 @@ namespace ModManager
         public static string RID { get; private set; } = string.Empty;
         public static void SetNewRID()
         {
-            RID = Random.Range(1000, 9999).ToString();
+            RID = UnityEngine.Random.Range(1000, 9999).ToString();
         }
 
         public static string HostCommandToAllowCheatsWithRequestId() => GetHostCommandToAllowCheats(RID);
 
         public static string HostCommandToAllowModsWithRequestId() => GetHostCommandToAllowMods(RID);
 
-        public static string ClientSystemInfoChatMessage(string command) => SystemInfoChatMessage($"Send <b><color=#36ff68>{command}</color></b> to request permission to use modAPI.");
+        public static string ClientSystemInfoChatMessage(string command, Color? color = null) => SystemInfoChatMessage($"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use modAPI.");
 
-        public static string HostSystemInfoChatMessage(string command) => SystemInfoChatMessage($"Hello <b><color=#03c6fc>{GetHostPlayerName()}</color></b>"
-                                                                                                                                                                                                                       + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#36ff68>{command}</color></b>"
-                                                                                                                                                                                                                       + $"\n<color=#ff3b3b>Be aware that this can be used for griefing!</color>");
+        public static string HostSystemInfoChatMessage(string command, Color? color = null, Color? subColor = null) => SystemInfoChatMessage($"Hello <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>{GetHostPlayerName()}</color></b>"
+                                                                                                                                                                                                                       + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#{(subColor.HasValue ? ColorUtility.ToHtmlStringRGBA(subColor.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b>"
+                                                                                                                                                                                                                       + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>Be aware that this can be used for griefing!</color>");
 
-        public static string RequestWasSentMessage() => SystemInfoChatMessage("<color=#36ff68>Request sent!</color>");
+        public static string RequestWasSentMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent!</color>");
 
-        public static string PermissionWasGrantedMessage() => SystemInfoChatMessage("<color=#36ff68>Permission to use mods granted!</color>");
+        public static string PermissionWasGrantedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Permission to {permission} in multiplayer granted!</color>");
 
-        public static string PermissionWasRevokedMessage() => SystemInfoChatMessage("<color=#36ff68>Permission to use mods revoked!</color>");
+        public static string PermissionWasRevokedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Permission to {permission} in multiplayer revoked!</color>");
 
-        public static string OnlyHostCanAllowMessage() => SystemInfoChatMessage("<color=#36ff68>Only the host can grant permission!</color>");
+        public static string OnlyHostCanAllowMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Only the host can grant permission!</color>");
 
-        public static string SystemInfoChatMessage(string content) => $"<color=#ff3b3b>System</color>:\n{content}";
+        public static string PlayerWasKickedMessage(string playerNameToKick, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{playerNameToKick} got kicked from the game!</color>");
 
-        private void ApplyOption(bool elem)
+        public static string SystemInfoChatMessage(string content, Color? color = null) => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
+
+        private void ApplyOption(string optionText, bool optionValue)
         {
-            if (elem)
+            if (optionValue)
             {
-                ShowHUDBigInfo(PermissionWasGrantedMessage(), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
-                P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage());
+                ShowHUDBigInfo(PermissionWasGrantedMessage(optionText), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
+                P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage(optionText));
             }
             else
             {
-                ShowHUDBigInfo(PermissionWasRevokedMessage(), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
-                P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage());
+                ShowHUDBigInfo(PermissionWasRevokedMessage(optionText), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
+                P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage(optionText));
             }
         }
 
@@ -179,22 +186,32 @@ namespace ModManager
             {
                 GUI.Label(new Rect(30f, 700f, 200f, 20f), "Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
                 optionStateBefore = AllowModsForMultiplayer;
-                AllowModsForMultiplayer = GUI.Toggle(new Rect(280f, 700f, 20f, 20f), AllowModsForMultiplayer, "");
+                AllowModsForMultiplayer = GUI.Toggle(new Rect(280f, 700f, 20f, 20f), AllowModsForMultiplayer, string.Empty, GUI.skin.toggle);
                 if (optionStateBefore != AllowModsForMultiplayer)
                 {
-                    ApplyOption(AllowModsForMultiplayer);
+                    ApplyOption($"to use mods", AllowModsForMultiplayer);
                     CloseMe();
                 }
 
                 GUI.Label(new Rect(30f, 720f, 200f, 20f), "Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
                 optionStateBefore = AllowCheatsForMultiplayer;
-                AllowCheatsForMultiplayer = GUI.Toggle(new Rect(280f, 720f, 20f, 20f), AllowCheatsForMultiplayer, "");
+                AllowCheatsForMultiplayer = GUI.Toggle(new Rect(280f, 720f, 20f, 20f), AllowCheatsForMultiplayer, string.Empty, GUI.skin.toggle);
                 if (optionStateBefore != AllowCheatsForMultiplayer)
                 {
-                    GreenHellGame.DEBUG = AllowCheatsForMultiplayer;
-                    ApplyOption(AllowCheatsForMultiplayer);
+                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || AllowCheatsForMultiplayer) && !Disable; ;
+                    ApplyOption($"to use cheats", AllowCheatsForMultiplayer);
                     CloseMe();
                 }
+
+                GUI.Label(new Rect(30f, 740f, 100f, 20f), "Player: ", GUI.skin.label);
+                playerNameToKick = GUI.TextField(new Rect(150f, 740f, 110f, 20f), playerNameToKick, GUI.skin.textField);
+                if (GUI.Button(new Rect(280f, 740f, 150f, 20f), "Kick player", GUI.skin.button))
+                {
+                    OnClickKickPlayerButton();
+                    showUI = false;
+                    EnableCursor(false);
+                }
+
             }
             else
             {
@@ -202,6 +219,26 @@ namespace ModManager
                 GUI.Label(new Rect(30f, 720f, 330f, 20f), "for single player or when host", GUI.skin.label);
             }
         }
+
+        private static void OnClickKickPlayerButton()
+        {
+            try
+            {
+                P2PPeer playerToKick = P2PSession.Instance.m_RemotePeers.ToList().Find(peer => peer.GetDisplayName().ToLower() == playerNameToKick.ToLower());
+                if (playerToKick != null)
+                {
+                    FindConnection(playerToKick).Disconnect();
+                    ShowHUDBigInfo(PlayerWasKickedMessage(playerNameToKick), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
+                    P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(playerNameToKick));
+                }
+            }
+            catch (Exception exc)
+            {
+                ModAPI.Log.Write($"[{nameof(ModManager)}.{nameof(ModManager)}:{nameof(OnClickKickPlayerButton)}] throws exception: {exc.Message}");
+            }
+        }
+
+        private static P2PConnection FindConnection(P2PPeer peer) => ((P2PSessionExtended)P2PSession.Instance).GetPeerConnection(peer);
 
         private void CloseMe()
         {

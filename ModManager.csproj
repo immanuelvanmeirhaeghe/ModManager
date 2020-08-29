@@ -347,6 +347,7 @@
   <ItemGroup>
     <Compile Include="Extensions\HUDTextChatExtended.cs" />
     <Compile Include="Extensions\HUDTextChatHistoryExtended.cs" />
+    <Compile Include="Extensions\P2PSessionExtended.cs" />
     <Compile Include="Extensions\PlayerExtended.cs" />
     <Compile Include="ModManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
