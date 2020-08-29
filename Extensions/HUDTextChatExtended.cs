@@ -11,8 +11,8 @@ namespace ModManager
             if (!ModManager.RequestInfoShown)
             {
                 ModManager.RequestInfoShown = true;
-                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.ClientCommandRequestToUseMods()));
-                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.ClientCommandRequestToUseCheats()));
+                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandRequestToUseMods()));
+                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandRequestToUseCheats()));
             }
             base.OnShow();
             ModManager.Disable = true;
@@ -30,22 +30,22 @@ namespace ModManager
 
             if (fieldTextMessage.Length > 0)
             {
-                if (fieldTextMessage == ModManager.ClientCommandRequestToUseMods())
+                if (fieldTextMessage == ModManager.GetClientCommandRequestToUseMods())
                 {
                     if (string.IsNullOrEmpty(ModManager.RID))
                     {
                         ModManager.SetNewRID();
                     }
-                    P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.HostCommandToAllowMods(), ModManager.RID));
+                    P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.RID)));
                     m_History.StoreMessage(ModManager.RequestWasSentMessage(), "");
                 }
-                else if (fieldTextMessage == ModManager.ClientCommandRequestToUseCheats())
+                else if (fieldTextMessage == ModManager.GetClientCommandRequestToUseCheats())
                 {
                     if (string.IsNullOrEmpty(ModManager.RID))
                     {
                         ModManager.SetNewRID();
                     }
-                    P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.HostCommandToAllowCheats(), ModManager.RID));
+                    P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowCheats(ModManager.RID)));
                     m_History.StoreMessage(ModManager.RequestWasSentMessage(), "");
                 }
                 else

@@ -13,6 +13,8 @@ namespace ModManager
     {
         private static ModManager s_Instance;
 
+        private static HUDManager hUDManager;
+
         private static Player player;
 
         private bool showUI;
@@ -27,19 +29,29 @@ namespace ModManager
             return s_Instance;
         }
 
+        public static void ShowHUDBigInfo(string text, string header, string textureName)
+        {
+            HUDBigInfo obj = (HUDBigInfo)hUDManager.GetHUD(typeof(HUDBigInfo));
+            HUDBigInfoData data = new HUDBigInfoData
+            {
+                m_Header = header,
+                m_Text = text,
+                m_TextureName = textureName,
+                m_ShowTime = Time.time
+            };
+            obj.AddInfo(data);
+            obj.Show(show: true);
+        }
+
+        public static void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
+        {
+            Localization localization = GreenHellGame.Instance.GetLocalization();
+            ((HUDMessages)hUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
+        }
+
         public static bool RequestInfoShown { get; set; } = false;
 
-        private static void OnToggled(bool elem)
-        {
-            if (elem)
-            {
-                P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage());
-            }
-            else
-            {
-                P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage());
-            }
-        }
+        private static bool optionStateBefore = false;
 
         public static bool AllowModsForMultiplayer { get; set; } = false;
 
@@ -47,13 +59,13 @@ namespace ModManager
 
         public static bool Disable { get; set; } = false;
 
-        public static string ClientCommandRequestToUseCheats() => "!requestCheats";
+        public static string GetClientCommandRequestToUseCheats() => "!requestCheats";
 
-        public static string HostCommandToAllowCheats() => "!allowCheats";
+        public static string GetHostCommandToAllowCheats(string requestId) => $"!allowCheats{requestId}";
 
-        public static string ClientCommandRequestToUseMods() => "!requestMods";
+        public static string GetClientCommandRequestToUseMods() => "!requestMods";
 
-        public static string HostCommandToAllowMods() => "!allowMods";
+        public static string GetHostCommandToAllowMods(string requestId) => $"!allowMods{requestId}";
 
         public static string GetClientPlayerName() => ReplTools.GetLocalPeer().GetDisplayName();
 
@@ -65,14 +77,14 @@ namespace ModManager
             RID = Random.Range(1000, 9999).ToString();
         }
 
-        public static string HostCommandToAllowCheatsWithRequestId() => $"{HostCommandToAllowCheats()}{RID}";
+        public static string HostCommandToAllowCheatsWithRequestId() => GetHostCommandToAllowCheats(RID);
 
-        public static string HostCommandToAllowModsWithRequestId() => $"{HostCommandToAllowMods()}{RID}";
+        public static string HostCommandToAllowModsWithRequestId() => GetHostCommandToAllowMods(RID);
 
         public static string ClientSystemInfoChatMessage(string command) => SystemInfoChatMessage($"Send <b><color=#36ff68>{command}</color></b> to request permission to use modAPI.");
 
-        public static string HostSystemInfoChatMessage(string command, string requestId) => SystemInfoChatMessage($"Hello <b><color=#03c6fc>{GetHostPlayerName()}</color></b>"
-                                                                                                                                                                                                                       + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#36ff68>{command}{requestId}</color></b>"
+        public static string HostSystemInfoChatMessage(string command) => SystemInfoChatMessage($"Hello <b><color=#03c6fc>{GetHostPlayerName()}</color></b>"
+                                                                                                                                                                                                                       + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#36ff68>{command}</color></b>"
                                                                                                                                                                                                                        + $"\n<color=#ff3b3b>Be aware that this can be used for griefing!</color>");
 
         public static string RequestWasSentMessage() => SystemInfoChatMessage("<color=#36ff68>Request sent!</color>");
@@ -84,6 +96,20 @@ namespace ModManager
         public static string OnlyHostCanAllowMessage() => SystemInfoChatMessage("<color=#36ff68>Only the host can grant permission!</color>");
 
         public static string SystemInfoChatMessage(string content) => $"<color=#ff3b3b>System</color>:\n{content}";
+
+        private void ApplyOption(bool elem)
+        {
+            if (elem)
+            {
+                ShowHUDBigInfo(PermissionWasGrantedMessage(), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
+                P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage());
+            }
+            else
+            {
+                ShowHUDBigInfo(PermissionWasRevokedMessage(), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
+                P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage());
+            }
+        }
 
         private static void EnableCursor(bool enabled = false)
         {
@@ -132,6 +158,7 @@ namespace ModManager
 
         private static void InitData()
         {
+            hUDManager = HUDManager.Get();
             player = Player.Get();
         }
 
@@ -145,18 +172,29 @@ namespace ModManager
             GUI.Box(new Rect(10f, 680f, 450f, 150f), "ModManager UI - Press HOME to open/close", GUI.skin.window);
             if (GUI.Button(new Rect(440f, 680f, 20f, 20f), "X", GUI.skin.button))
             {
-                showUI = false;
-                EnableCursor(false);
+                CloseMe();
             }
+
             if (ReplTools.AmIMaster())
             {
                 GUI.Label(new Rect(30f, 700f, 200f, 20f), "Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
-                AllowModsForMultiplayer = GUI.Toggle(new Rect(280f, 700f, 20f, 20f), AllowModsForMultiplayer, "");                
-                OnToggled(AllowModsForMultiplayer);
+                optionStateBefore = AllowModsForMultiplayer;
+                AllowModsForMultiplayer = GUI.Toggle(new Rect(280f, 700f, 20f, 20f), AllowModsForMultiplayer, "");
+                if (optionStateBefore != AllowModsForMultiplayer)
+                {
+                    ApplyOption(AllowModsForMultiplayer);
+                    CloseMe();
+                }
 
                 GUI.Label(new Rect(30f, 720f, 200f, 20f), "Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
+                optionStateBefore = AllowCheatsForMultiplayer;
                 AllowCheatsForMultiplayer = GUI.Toggle(new Rect(280f, 720f, 20f, 20f), AllowCheatsForMultiplayer, "");
-                OnToggled(AllowCheatsForMultiplayer);
+                if (optionStateBefore != AllowCheatsForMultiplayer)
+                {
+                    GreenHellGame.DEBUG = AllowCheatsForMultiplayer;
+                    ApplyOption(AllowCheatsForMultiplayer);
+                    CloseMe();
+                }
             }
             else
             {
@@ -165,5 +203,10 @@ namespace ModManager
             }
         }
 
+        private void CloseMe()
+        {
+            showUI = false;
+            EnableCursor(false);
+        }
     }
 }
