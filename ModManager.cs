@@ -36,7 +36,7 @@ namespace ModManager
             return s_Instance;
         }
 
-        public static void ShowHUDBigInfo(string text, string header, string textureName)
+        public void ShowHUDBigInfo(string text, string header, string textureName)
         {
             HUDBigInfo obj = (HUDBigInfo)hUDManager.GetHUD(typeof(HUDBigInfo));
             HUDBigInfoData data = new HUDBigInfoData
@@ -50,7 +50,7 @@ namespace ModManager
             obj.Show(show: true);
         }
 
-        public static void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
+        public void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
         {
             Localization localization = GreenHellGame.Instance.GetLocalization();
             ((HUDMessages)hUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
@@ -117,7 +117,7 @@ namespace ModManager
         private void EnableCursor(bool blockPlayer = false)
         {
             CursorManager.Get().ShowCursor(blockPlayer);
-            player = Player.Get();
+
             if (blockPlayer)
             {
                 player.BlockMoves();
@@ -161,7 +161,8 @@ namespace ModManager
 
         private void InitWindow()
         {
-            ModManagerWindow = GUI.Window(0, ModManagerWindow, InitModWindow, $"{nameof(ModManager)}", GUI.skin.window);
+            int wid = GetHashCode();
+            ModManagerWindow = GUI.Window(wid, ModManagerWindow, InitModWindow, $"{nameof(ModManager)}", GUI.skin.window);
         }
 
         private static void InitData()
