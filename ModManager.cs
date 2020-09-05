@@ -27,6 +27,7 @@ namespace ModManager
 
         public ModManager()
         {
+			useGUILayout  = true;
             s_Instance = this;
         }
 
