@@ -16,18 +16,21 @@ namespace ModManager
     {
         private static ModManager s_Instance;
 
+        private static readonly string ModName = nameof(ModManager);
+
         private static HUDManager hUDManager;
 
         private static Player player;
 
         private bool showUI;
-        public Rect ModManagerWindow = new Rect(10f, 680f, 450f, 150f);
+
+        public Rect ModManagerScreen = new Rect(10f, 680f, 450f, 150f);
 
         private static string playerNameToKick = string.Empty;
 
         public ModManager()
         {
-			useGUILayout  = true;
+            useGUILayout = true;
             s_Instance = this;
         }
 
@@ -100,20 +103,6 @@ namespace ModManager
 
         public static string SystemInfoChatMessage(string content, Color? color = null) => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
 
-        private void ApplyOption(string optionText, bool optionValue)
-        {
-            if (optionValue)
-            {
-                ShowHUDBigInfo(PermissionWasGrantedMessage(optionText), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
-                P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage(optionText));
-            }
-            else
-            {
-                ShowHUDBigInfo(PermissionWasRevokedMessage(optionText), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
-                P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage(optionText));
-            }
-        }
-
         private void EnableCursor(bool blockPlayer = false)
         {
             CursorManager.Get().ShowCursor(blockPlayer);
@@ -162,7 +151,7 @@ namespace ModManager
         private void InitWindow()
         {
             int wid = GetHashCode();
-            ModManagerWindow = GUI.Window(wid, ModManagerWindow, InitModWindow, $"{nameof(ModManager)}", GUI.skin.window);
+            ModManagerScreen = GUILayout.Window(wid, ModManagerScreen, InitModManagerScreen, $"{ModName}", GUI.skin.window);
         }
 
         private static void InitData()
@@ -182,49 +171,76 @@ namespace ModManager
             EnableCursor(false);
         }
 
-        private void InitModWindow(int windowId)
+        private void InitModManagerScreen(int windowID)
         {
-            if (GUI.Button(new Rect(440f, 680f, 20f, 20f), "X", GUI.skin.button))
+            using (var verticalScope = new GUILayout.VerticalScope($"{ModName}box"))
             {
-                CloseWindow();
+                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
+                {
+                    CloseWindow();
+                }
+
+                if (ReplTools.AmIMaster())
+                {
+                    using (var horizontalScope = new GUILayout.HorizontalScope("modsBox"))
+                    {
+                        GUILayout.Label("Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
+                        optionStateBefore = AllowModsForMultiplayer;
+                        AllowModsForMultiplayer = GUILayout.Toggle(AllowModsForMultiplayer, string.Empty, GUI.skin.toggle);
+                        if (optionStateBefore != AllowModsForMultiplayer)
+                        {
+                            OnToggled(AllowModsForMultiplayer, $"to use mods");
+                            CloseWindow();
+                        }
+                    }
+                    using (var horizontalScope = new GUILayout.HorizontalScope("cheatsBox"))
+                    {
+                        GUILayout.Label("Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
+                        optionStateBefore = AllowCheatsForMultiplayer;
+                        AllowCheatsForMultiplayer = GUILayout.Toggle(AllowCheatsForMultiplayer, string.Empty, GUI.skin.toggle);
+                        if (optionStateBefore != AllowCheatsForMultiplayer)
+                        {
+                            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || AllowCheatsForMultiplayer) && !Disable; ;
+                            OnToggled(AllowCheatsForMultiplayer, $"to use cheats");
+                            CloseWindow();
+                        }
+                    }
+                    using (var horizontalScope = new GUILayout.HorizontalScope("kickBox"))
+                    {
+                        GUILayout.Label("Player: ", GUI.skin.label);
+                        playerNameToKick = GUILayout.TextField(playerNameToKick, GUI.skin.textField);
+                        if (GUILayout.Button("Kick player", GUI.skin.button))
+                        {
+                            OnClickKickPlayerButton();
+                            CloseWindow();
+                        }
+                    }
+                }
+                else
+                {
+                    using (var infoVerticalScope = new GUILayout.VerticalScope($"infoBox"))
+                    {
+                        GUILayout.Label($"{ModName} UI is only available", GUI.skin.label);
+                        GUILayout.Label("for single player or when host.", GUI.skin.label);
+                    }
+                }
             }
 
-            if (ReplTools.AmIMaster())
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+        }
+
+        private void OnToggled(bool optionValue, string optionText)
+        {
+            if (optionValue)
             {
-                GUI.Label(new Rect(30f, 700f, 200f, 20f), "Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
-                optionStateBefore = AllowModsForMultiplayer;
-                AllowModsForMultiplayer = GUI.Toggle(new Rect(280f, 700f, 20f, 20f), AllowModsForMultiplayer, string.Empty, GUI.skin.toggle);
-                if (optionStateBefore != AllowModsForMultiplayer)
-                {
-                    ApplyOption($"to use mods", AllowModsForMultiplayer);
-                    CloseWindow();
-                }
-
-                GUI.Label(new Rect(30f, 720f, 200f, 20f), "Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
-                optionStateBefore = AllowCheatsForMultiplayer;
-                AllowCheatsForMultiplayer = GUI.Toggle(new Rect(280f, 720f, 20f, 20f), AllowCheatsForMultiplayer, string.Empty, GUI.skin.toggle);
-                if (optionStateBefore != AllowCheatsForMultiplayer)
-                {
-                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || AllowCheatsForMultiplayer) && !Disable; ;
-                    ApplyOption($"to use cheats", AllowCheatsForMultiplayer);
-                    CloseWindow();
-                }
-
-                GUI.Label(new Rect(30f, 740f, 100f, 20f), "Player: ", GUI.skin.label);
-                playerNameToKick = GUI.TextField(new Rect(150f, 740f, 110f, 20f), playerNameToKick, GUI.skin.textField);
-                if (GUI.Button(new Rect(280f, 740f, 150f, 20f), "Kick player", GUI.skin.button))
-                {
-                    OnClickKickPlayerButton();
-                    CloseWindow();
-                }
+                ShowHUDBigInfo(PermissionWasGrantedMessage(optionText), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage(optionText));
             }
             else
             {
-                GUI.Label(new Rect(30f, 700f, 330f, 20f), $"{nameof(ModManager)} UI is only available", GUI.skin.label);
-                GUI.Label(new Rect(30f, 720f, 330f, 20f), "for single player or when host.", GUI.skin.label);
+                ShowHUDBigInfo(PermissionWasRevokedMessage(optionText), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage(optionText));
             }
-
-            GUI.DragWindow(new Rect(0, 0, 10000, 10000));
         }
 
         private void OnClickKickPlayerButton()
@@ -235,13 +251,13 @@ namespace ModManager
                 if (playerToKick != null)
                 {
                     FindConnection(playerToKick).Disconnect();
-                    ShowHUDBigInfo(PlayerWasKickedMessage(playerNameToKick), $"{nameof(ModManager)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(PlayerWasKickedMessage(playerNameToKick), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                     P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(playerNameToKick));
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModManager)}.{nameof(ModManager)}:{nameof(OnClickKickPlayerButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickKickPlayerButton)}] throws exception: {exc.Message}");
             }
         }
 
