@@ -29,22 +29,9 @@
                 if (isMaster)
                 {
                     ModManager.AllowModsForMultiplayer = true;
-                    ModManager.SetNewRID();
+                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowModsForMultiplayer) && !ModManager.Disable;
+                    ModManager.SetNewChatRequestId();
                     StoreMessage(ModManager.PermissionWasGrantedMessage($"to use mods"));
-                }
-                else
-                {
-                    StoreMessage(ModManager.OnlyHostCanAllowMessage());
-                }
-            }
-            else if (textMessage == ModManager.HostCommandToAllowCheatsWithRequestId())
-            {
-                if (isMaster)
-                {
-                    ModManager.AllowCheatsForMultiplayer = true;
-                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowCheatsForMultiplayer) && !ModManager.Disable;
-                    ModManager.SetNewRID();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage($"to use cheats"));
                 }
                 else
                 {

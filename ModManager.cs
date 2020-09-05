@@ -21,6 +21,7 @@ namespace ModManager
         private static Player player;
 
         private bool showUI;
+        public Rect ModManagerWindow = new Rect(10f, 680f, 450f, 150f);
 
         private static string playerNameToKick = string.Empty;
 
@@ -64,39 +65,33 @@ namespace ModManager
 
         public static bool Disable { get; set; } = false;
 
-        public static string GetClientCommandRequestToUseCheats() => "!requestCheats";
-
-        public static string GetHostCommandToAllowCheats(string requestId) => $"!allowCheats{requestId}";
-
         public static string GetClientCommandRequestToUseMods() => "!requestMods";
 
-        public static string GetHostCommandToAllowMods(string requestId) => $"!allowMods{requestId}";
+        public static string GetHostCommandToAllowMods(string chatRequestId) => $"!allowMods{chatRequestId}";
 
         public static string GetClientPlayerName() => ReplTools.GetLocalPeer().GetDisplayName();
 
         public static string GetHostPlayerName() => P2PSession.Instance.GetSessionMaster().GetDisplayName();
 
-        public static string RID { get; private set; } = string.Empty;
-        public static void SetNewRID()
+        public static string ChatRequestId { get; private set; } = string.Empty;
+        public static void SetNewChatRequestId()
         {
-            RID = UnityEngine.Random.Range(1000, 9999).ToString();
+            ChatRequestId = UnityEngine.Random.Range(1000, 9999).ToString();
         }
 
-        public static string HostCommandToAllowCheatsWithRequestId() => GetHostCommandToAllowCheats(RID);
+        public static string HostCommandToAllowModsWithRequestId() => GetHostCommandToAllowMods(ChatRequestId);
 
-        public static string HostCommandToAllowModsWithRequestId() => GetHostCommandToAllowMods(RID);
-
-        public static string ClientSystemInfoChatMessage(string command, Color? color = null) => SystemInfoChatMessage($"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use modAPI.");
+        public static string ClientSystemInfoChatMessage(string command, Color? color = null) => SystemInfoChatMessage($"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use mods.");
 
         public static string HostSystemInfoChatMessage(string command, Color? color = null, Color? subColor = null) => SystemInfoChatMessage($"Hello <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>{GetHostPlayerName()}</color></b>"
                                                                                                                                                                                                                        + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#{(subColor.HasValue ? ColorUtility.ToHtmlStringRGBA(subColor.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b>"
                                                                                                                                                                                                                        + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>Be aware that this can be used for griefing!</color>");
 
-        public static string RequestWasSentMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent!</color>");
+        public static string RequestWasSentMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>");
 
-        public static string PermissionWasGrantedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Permission to {permission} in multiplayer granted!</color>");
+        public static string PermissionWasGrantedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Permission {permission} granted!</color>");
 
-        public static string PermissionWasRevokedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Permission to {permission} in multiplayer revoked!</color>");
+        public static string PermissionWasRevokedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Permission {permission} revoked!</color>");
 
         public static string OnlyHostCanAllowMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Only the host can grant permission!</color>");
 
@@ -118,11 +113,11 @@ namespace ModManager
             }
         }
 
-        private static void EnableCursor(bool enabled = false)
+        private void EnableCursor(bool blockPlayer = false)
         {
-            CursorManager.Get().ShowCursor(enabled);
+            CursorManager.Get().ShowCursor(blockPlayer);
             player = Player.Get();
-            if (enabled)
+            if (blockPlayer)
             {
                 player.BlockMoves();
                 player.BlockRotation();
@@ -143,7 +138,7 @@ namespace ModManager
                 if (!showUI)
                 {
                     InitData();
-                    EnableCursor(enabled: true);
+                    EnableCursor(blockPlayer: true);
                 }
                 showUI = !showUI;
                 if (!showUI)
@@ -159,8 +154,13 @@ namespace ModManager
             {
                 InitData();
                 InitSkinUI();
-                InitModUI();
+                InitWindow();
             }
+        }
+
+        private void InitWindow()
+        {
+            ModManagerWindow = GUI.Window(0, ModManagerWindow, InitModWindow, $"{nameof(ModManager)}", GUI.skin.window);
         }
 
         private static void InitData()
@@ -174,12 +174,17 @@ namespace ModManager
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void InitModUI()
+        private void CloseWindow()
         {
-            GUI.Box(new Rect(10f, 680f, 450f, 150f), "ModManager UI - Press HOME to open/close", GUI.skin.window);
+            showUI = false;
+            EnableCursor(false);
+        }
+
+        private void InitModWindow(int windowId)
+        {
             if (GUI.Button(new Rect(440f, 680f, 20f, 20f), "X", GUI.skin.button))
             {
-                CloseMe();
+                CloseWindow();
             }
 
             if (ReplTools.AmIMaster())
@@ -190,7 +195,7 @@ namespace ModManager
                 if (optionStateBefore != AllowModsForMultiplayer)
                 {
                     ApplyOption($"to use mods", AllowModsForMultiplayer);
-                    CloseMe();
+                    CloseWindow();
                 }
 
                 GUI.Label(new Rect(30f, 720f, 200f, 20f), "Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
@@ -200,7 +205,7 @@ namespace ModManager
                 {
                     GreenHellGame.DEBUG = (ReplTools.AmIMaster() || AllowCheatsForMultiplayer) && !Disable; ;
                     ApplyOption($"to use cheats", AllowCheatsForMultiplayer);
-                    CloseMe();
+                    CloseWindow();
                 }
 
                 GUI.Label(new Rect(30f, 740f, 100f, 20f), "Player: ", GUI.skin.label);
@@ -208,23 +213,23 @@ namespace ModManager
                 if (GUI.Button(new Rect(280f, 740f, 150f, 20f), "Kick player", GUI.skin.button))
                 {
                     OnClickKickPlayerButton();
-                    showUI = false;
-                    EnableCursor(false);
+                    CloseWindow();
                 }
-
             }
             else
             {
-                GUI.Label(new Rect(30f, 700f, 330f, 20f), "This manager UI is only visible", GUI.skin.label);
-                GUI.Label(new Rect(30f, 720f, 330f, 20f), "for single player or when host", GUI.skin.label);
+                GUI.Label(new Rect(30f, 700f, 330f, 20f), $"{nameof(ModManager)} UI is only available", GUI.skin.label);
+                GUI.Label(new Rect(30f, 720f, 330f, 20f), "for single player or when host.", GUI.skin.label);
             }
+
+            GUI.DragWindow(new Rect(0, 0, 10000, 10000));
         }
 
-        private static void OnClickKickPlayerButton()
+        private void OnClickKickPlayerButton()
         {
             try
             {
-                P2PPeer playerToKick = P2PSession.Instance.m_RemotePeers.ToList().Find(peer => peer.GetDisplayName().ToLower() == playerNameToKick.ToLower());
+                P2PPeer playerToKick = ReplTools.GetRemotePeers()?.ToList().Find(peer => peer.GetDisplayName().ToLower() == playerNameToKick.ToLower());
                 if (playerToKick != null)
                 {
                     FindConnection(playerToKick).Disconnect();
@@ -238,12 +243,9 @@ namespace ModManager
             }
         }
 
-        private static P2PConnection FindConnection(P2PPeer peer) => ((P2PSessionExtended)P2PSession.Instance).GetPeerConnection(peer);
-
-        private void CloseMe()
+        private P2PConnection FindConnection(P2PPeer p2pPeer)
         {
-            showUI = false;
-            EnableCursor(false);
+            return ((P2PSessionExtended)P2PSession.Instance).GetPeerConnection(p2pPeer);
         }
     }
 }
