@@ -173,7 +173,7 @@ namespace ModManager
 
         private void InitModManagerScreen(int windowID)
         {
-            using (var verticalScope = new GUILayout.VerticalScope($"{ModName}box"))
+            using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
                 {
@@ -182,7 +182,7 @@ namespace ModManager
 
                 if (ReplTools.AmIMaster())
                 {
-                    using (var horizontalScope = new GUILayout.HorizontalScope("modsBox"))
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
                         optionStateBefore = AllowModsForMultiplayer;
@@ -193,7 +193,7 @@ namespace ModManager
                             CloseWindow();
                         }
                     }
-                    using (var horizontalScope = new GUILayout.HorizontalScope("cheatsBox"))
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
                         optionStateBefore = AllowCheatsForMultiplayer;
@@ -205,7 +205,7 @@ namespace ModManager
                             CloseWindow();
                         }
                     }
-                    using (var horizontalScope = new GUILayout.HorizontalScope("kickBox"))
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Player: ", GUI.skin.label);
                         playerNameToKick = GUILayout.TextField(playerNameToKick, GUI.skin.textField);
@@ -218,7 +218,7 @@ namespace ModManager
                 }
                 else
                 {
-                    using (var infoVerticalScope = new GUILayout.VerticalScope($"infoBox"))
+                    using (var infoVerticalScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
                         GUILayout.Label($"{ModName} UI is only available", GUI.skin.label);
                         GUILayout.Label("for single player or when host.", GUI.skin.label);
