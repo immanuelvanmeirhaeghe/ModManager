@@ -63,6 +63,8 @@ namespace ModManager
 
         public static bool RequestInfoShown { get; set; } = false;
 
+        public static int RequestsSendToHost { get; set; } = 0;
+
         private static bool optionStateBefore = false;
 
         public static bool AllowModsForMultiplayer { get; set; } = false;
@@ -242,10 +244,14 @@ namespace ModManager
                 }
                 else
                 {
-                    using (var infoVerticalScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{ModName} UI is only available", GUI.skin.label);
-                        GUILayout.Label("for single player or when host.", GUI.skin.label);
+                        GUILayout.Label("Send chat request to host to allow mods", GUI.skin.label);
+                        if (GUILayout.Button("!requestMods", GUI.skin.button))
+                        {
+                            OnClickRequestModsButton();
+                            CloseWindow();
+                        }
                     }
                 }
             }
@@ -298,6 +304,23 @@ namespace ModManager
             catch (Exception exc)
             {
                 ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickRestartButton)}] throws exception: {exc.Message}");
+            }
+        }
+
+        private void OnClickRequestModsButton()
+        {
+            try
+            {
+                if (RequestsSendToHost >= 3)
+                {
+                    return;
+                }
+                P2PSession.Instance.SendTextChatMessage(GetClientCommandRequestToUseMods());
+                ShowHUDBigInfo(RequestWasSentMessage(), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+            }
+            catch (Exception exc)
+            {
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickRequestModsButton)}] throws exception: {exc.Message}");
             }
         }
     }
