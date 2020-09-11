@@ -26,7 +26,9 @@ namespace ModManager
 
         public Rect ModManagerScreen = new Rect(10f, 680f, 450f, 150f);
 
-        private static string playerNameToKick = string.Empty;
+        private static string SelectedPlayerName = string.Empty;
+        private static int SelectedPlayerIndex = 0;
+        private static int PlayerCount => P2PSession.Instance.m_RemotePeers.Count;
 
         public ModManager()
         {
@@ -76,6 +78,19 @@ namespace ModManager
         public static string GetClientPlayerName() => ReplTools.GetLocalPeer().GetDisplayName();
 
         public static string GetHostPlayerName() => P2PSession.Instance.GetSessionMaster().GetDisplayName();
+
+        public static string[] GetPlayerNames()
+        {
+            string[] playerNames = new string[P2PSession.Instance.m_RemotePeers.Count];
+            int playerIdx = 0;
+            var players = P2PSession.Instance.m_RemotePeers.ToList();
+            foreach (var peer in players)
+            {
+                playerNames[playerIdx] = peer.GetDisplayName();
+                playerIdx++;
+            }
+            return playerNames;
+        }
 
         public static string ChatRequestId { get; private set; } = string.Empty;
         public static void SetNewChatRequestId()
@@ -175,7 +190,7 @@ namespace ModManager
         {
             using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
+                if (GUI.Button(new Rect(430f, 0f, 15f, 15f), "X", GUI.skin.button))
                 {
                     CloseWindow();
                 }
@@ -207,11 +222,20 @@ namespace ModManager
                     }
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Player: ", GUI.skin.label);
-                        playerNameToKick = GUILayout.TextField(playerNameToKick, GUI.skin.textField);
+                        GUILayout.Label("Select player: ", GUI.skin.label);
+                        SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, GetPlayerNames(), 2, GUI.skin.button);
                         if (GUILayout.Button("Kick player", GUI.skin.button))
                         {
                             OnClickKickPlayerButton();
+                            CloseWindow();
+                        }
+                    }
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label("Save and restart host session with current players", GUI.skin.label);
+                        if (GUILayout.Button("Restart", GUI.skin.button))
+                        {
+                            OnClickRestartButton();
                             CloseWindow();
                         }
                     }
@@ -225,7 +249,6 @@ namespace ModManager
                     }
                 }
             }
-
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
@@ -247,12 +270,16 @@ namespace ModManager
         {
             try
             {
-                P2PPeer playerToKick = ReplTools.GetRemotePeers()?.ToList().Find(peer => peer.GetDisplayName().ToLower() == playerNameToKick.ToLower());
+                string[] playerNames = GetPlayerNames();
+                SelectedPlayerName = playerNames[SelectedPlayerIndex];
+
+                P2PPeer playerToKick = P2PSession.Instance.m_RemotePeers.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
                 if (playerToKick != null)
                 {
-                    FindConnection(playerToKick).Disconnect();
-                    ShowHUDBigInfo(PlayerWasKickedMessage(playerNameToKick), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                    P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(playerNameToKick));
+                    var pp = P2PTransportLayer.Instance.GetCurrentLobbyMembers().ToList().Find(lm => lm.m_Address == playerToKick.m_Address);
+                    P2PTransportLayer.Instance.KickLobbyMember(pp);
+                    ShowHUDBigInfo(PlayerWasKickedMessage(SelectedPlayerName), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
                 }
             }
             catch (Exception exc)
@@ -261,9 +288,17 @@ namespace ModManager
             }
         }
 
-        private P2PConnection FindConnection(P2PPeer p2pPeer)
+        private void OnClickRestartButton()
         {
-            return ((P2PSessionExtended)P2PSession.Instance).GetPeerConnection(p2pPeer);
+            try
+            {
+                SaveGame.SaveCoop();
+                P2PSession.Instance.Restart();
+            }
+            catch (Exception exc)
+            {
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickRestartButton)}] throws exception: {exc.Message}");
+            }
         }
     }
 }
