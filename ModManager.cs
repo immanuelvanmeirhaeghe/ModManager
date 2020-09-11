@@ -313,6 +313,7 @@ namespace ModManager
             {
                 if (RequestsSendToHost >= 3)
                 {
+                    ShowHUDBigInfo("To avoid spamming, max. 3 requests can be send with the button.", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                     return;
                 }
                 P2PSession.Instance.SendTextChatMessage(GetClientCommandRequestToUseMods());
