@@ -29,9 +29,10 @@
                 if (isMaster)
                 {
                     ModManager.AllowModsForMultiplayer = true;
-                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowModsForMultiplayer) && !ModManager.Disable;
+                    ModManager.AllowCheatsForMultiplayer = true;
+                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowCheatsForMultiplayer) && !ModManager.Disable;
                     ModManager.SetNewChatRequestId();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage($"to use mods"));
+                    StoreMessage(ModManager.PermissionWasGrantedMessage($"to use mods and cheats"));
                 }
                 else
                 {

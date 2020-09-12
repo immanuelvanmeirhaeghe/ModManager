@@ -201,7 +201,7 @@ namespace ModManager
                 {
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Allow mods for multiplayer? (enabled = yes)", GUI.skin.label);
+                        GUILayout.Label("Allow mods for multiplayer? ", GUI.skin.label);
                         optionStateBefore = AllowModsForMultiplayer;
                         AllowModsForMultiplayer = GUILayout.Toggle(AllowModsForMultiplayer, string.Empty, GUI.skin.toggle);
                         if (optionStateBefore != AllowModsForMultiplayer)
@@ -212,7 +212,7 @@ namespace ModManager
                     }
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Allow cheats for multiplayer? (enabled = yes)", GUI.skin.label);
+                        GUILayout.Label("Allow cheats for multiplayer? ", GUI.skin.label);
                         optionStateBefore = AllowCheatsForMultiplayer;
                         AllowCheatsForMultiplayer = GUILayout.Toggle(AllowCheatsForMultiplayer, string.Empty, GUI.skin.toggle);
                         if (optionStateBefore != AllowCheatsForMultiplayer)
@@ -299,7 +299,12 @@ namespace ModManager
             try
             {
                 SaveGame.SaveCoop();
+                var players = P2PSession.Instance.m_RemotePeers.ToList();
                 P2PSession.Instance.Restart();
+                foreach (P2PPeer pPlayer in players)
+                {
+                    P2PSession.Instance.JoinLobby(pPlayer.m_Address);
+                }
             }
             catch (Exception exc)
             {
@@ -318,6 +323,7 @@ namespace ModManager
                 }
                 P2PSession.Instance.SendTextChatMessage(GetClientCommandRequestToUseMods());
                 ShowHUDBigInfo(RequestWasSentMessage(), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                RequestsSendToHost++;
             }
             catch (Exception exc)
             {
