@@ -1,9 +1,11 @@
 /*
  * This code was inspired by Moritz. Thank you!
  * */
+using Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace ModManager
@@ -22,7 +24,7 @@ namespace ModManager
 
         private static Player player;
 
-        private bool showUI;
+        private bool ShowUI;
 
         public Rect ModManagerScreen = new Rect(10f, 680f, 450f, 150f);
 
@@ -65,7 +67,7 @@ namespace ModManager
 
         public static int RequestsSendToHost { get; set; } = 0;
 
-        private static bool optionStateBefore = false;
+        private static bool optionState;
 
         public static bool AllowModsForMultiplayer { get; set; } = false;
 
@@ -100,25 +102,43 @@ namespace ModManager
             ChatRequestId = UnityEngine.Random.Range(1000, 9999).ToString();
         }
 
-        public static string HostCommandToAllowModsWithRequestId() => GetHostCommandToAllowMods(ChatRequestId);
+        public static string HostCommandToAllowModsWithRequestId()
+            => GetHostCommandToAllowMods(ChatRequestId);
 
-        public static string ClientSystemInfoChatMessage(string command, Color? color = null) => SystemInfoChatMessage($"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use mods.");
+        public static string ClientSystemInfoChatMessage(string command, Color? color = null)
+            => SystemInfoChatMessage($"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use mods.");
 
-        public static string HostSystemInfoChatMessage(string command, Color? color = null, Color? subColor = null) => SystemInfoChatMessage($"Hello <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>{GetHostPlayerName()}</color></b>"
-                                                                                                                                                                                                                       + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#{(subColor.HasValue ? ColorUtility.ToHtmlStringRGBA(subColor.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b>"
-                                                                                                                                                                                                                       + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>Be aware that this can be used for griefing!</color>");
+        public static string HostSystemInfoChatMessage(string command, Color? color = null, Color? subColor = null)
+            => SystemInfoChatMessage(
+                $"Hello <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>{GetHostPlayerName()}</color></b>"
+            + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#{(subColor.HasValue ? ColorUtility.ToHtmlStringRGBA(subColor.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b>"
+            + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Be aware that this can be used for griefing!</color>");
 
-        public static string RequestWasSentMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>");
+        public static string RequestWasSentMessage(Color? color = null)
+            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>");
 
-        public static string PermissionWasGrantedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Permission {permission} granted!</color>");
+        public static string PermissionWasGrantedMessage(string permission, Color? color = null)
+            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Permission {permission} granted!</color>");
 
-        public static string PermissionWasRevokedMessage(string permission, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Permission {permission} revoked!</color>");
+        public static string PermissionWasRevokedMessage(string permission, Color? color = null)
+            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Permission {permission} revoked!</color>");
 
-        public static string OnlyHostCanAllowMessage(Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Only the host can grant permission!</color>");
+        public static string OnlyHostCanAllowMessage(Color? color = null)
+            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Only the host {GetHostPlayerName()} can grant permission!</color>");
 
-        public static string PlayerWasKickedMessage(string playerNameToKick, Color? color = null) => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{playerNameToKick} got kicked from the game!</color>");
+        public static string PlayerWasKickedMessage(string playerNameToKick, Color? color = null)
+            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{playerNameToKick} got kicked from the game!</color>");
 
-        public static string SystemInfoChatMessage(string content, Color? color = null) => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
+        public static string MaximumRequestsSendMessage(int maxRequest, Color? color = null)
+            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Max. {maxRequest} requests can be send!</color>");
+
+        public static string SystemInfoServerRestartMessage(Color? color = null)
+            => SystemInfoChatMessage(
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}><b>Attention all players!</b></color>"
+             + $" \nGame host {GetHostPlayerName()} is restarting the server. \nYou will be automatically rejoining in a short while. Please hold.");
+
+        public static string SystemInfoChatMessage(string content, Color? color = null)
+            => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
 
         private void EnableCursor(bool blockPlayer = false)
         {
@@ -142,22 +162,27 @@ namespace ModManager
         {
             if (Input.GetKeyDown(KeyCode.Home))
             {
-                if (!showUI)
+                if (!ShowUI)
                 {
                     InitData();
                     EnableCursor(blockPlayer: true);
                 }
-                showUI = !showUI;
-                if (!showUI)
+                ToggleShowUI();
+                if (!ShowUI)
                 {
-                    EnableCursor();
+                    EnableCursor(blockPlayer: false);
                 }
             }
         }
 
+        private void ToggleShowUI()
+        {
+            ShowUI = !ShowUI;
+        }
+
         private void OnGUI()
         {
-            if (showUI)
+            if (ShowUI)
             {
                 InitData();
                 InitSkinUI();
@@ -184,7 +209,7 @@ namespace ModManager
 
         private void CloseWindow()
         {
-            showUI = false;
+            ShowUI = false;
             EnableCursor(false);
         }
 
@@ -192,75 +217,111 @@ namespace ModManager
         {
             using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                if (GUI.Button(new Rect(430f, 0f, 15f, 15f), "X", GUI.skin.button))
+                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
                 {
                     CloseWindow();
                 }
 
                 if (ReplTools.AmIMaster())
                 {
-                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    using (var vHorizontalScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Allow mods for multiplayer? ", GUI.skin.label);
-                        optionStateBefore = AllowModsForMultiplayer;
-                        AllowModsForMultiplayer = GUILayout.Toggle(AllowModsForMultiplayer, string.Empty, GUI.skin.toggle);
-                        if (optionStateBefore != AllowModsForMultiplayer)
-                        {
-                            OnToggled(AllowModsForMultiplayer, $"to use mods");
-                            CloseWindow();
-                        }
+                        AllowModsOptionButton();
+                        AllowCheatsOptionButton();
                     }
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Allow cheats for multiplayer? ", GUI.skin.label);
-                        optionStateBefore = AllowCheatsForMultiplayer;
-                        AllowCheatsForMultiplayer = GUILayout.Toggle(AllowCheatsForMultiplayer, string.Empty, GUI.skin.toggle);
-                        if (optionStateBefore != AllowCheatsForMultiplayer)
-                        {
-                            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || AllowCheatsForMultiplayer) && !Disable; ;
-                            OnToggled(AllowCheatsForMultiplayer, $"to use cheats");
-                            CloseWindow();
-                        }
+                        KickPlayerButton();
                     }
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Select player: ", GUI.skin.label);
-                        SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, GetPlayerNames(), 2, GUI.skin.button);
-                        if (GUILayout.Button("Kick player", GUI.skin.button))
-                        {
-                            OnClickKickPlayerButton();
-                            CloseWindow();
-                        }
-                    }
-                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                    {
-                        GUILayout.Label("Save and restart host session with current players", GUI.skin.label);
-                        if (GUILayout.Button("Restart", GUI.skin.button))
-                        {
-                            OnClickRestartButton();
-                            CloseWindow();
-                        }
+                        RestartServerButton();
                     }
                 }
                 else
                 {
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Send chat request to host to allow mods", GUI.skin.label);
-                        if (GUILayout.Button("!requestMods", GUI.skin.button))
-                        {
-                            OnClickRequestModsButton();
-                            CloseWindow();
-                        }
+                        ClientRequestButton();
                     }
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void OnToggled(bool optionValue, string optionText)
+        private void ClientRequestButton()
         {
-            if (optionValue)
+            GUILayout.Label("Send chat request to host to allow mods (max. 3 to avoid spam.)", GUI.skin.label);
+            if (GUILayout.Button(GetClientCommandRequestToUseMods(), GUI.skin.button))
+            {
+                OnClickRequestModsButton();
+                CloseWindow();
+            }
+        }
+
+        private void RestartServerButton()
+        {
+            GUILayout.Label("Save and restart host session with current players", GUI.skin.label);
+            if (GUILayout.Button("Restart", GUI.skin.button))
+            {
+                OnClickRestartButton();
+                CloseWindow();
+            }
+        }
+
+        private void KickPlayerButton()
+        {
+            GUILayout.Label("Select player: ", GUI.skin.label);
+            SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, GetPlayerNames(), 2, GUI.skin.button);
+            if (GUILayout.Button("Kick player", GUI.skin.button))
+            {
+                OnClickKickPlayerButton();
+            }
+        }
+
+        private void AllowCheatsOptionButton()
+        {
+            optionState = AllowCheatsForMultiplayer;
+            AllowCheatsForMultiplayer = GUILayout.Toggle(AllowCheatsForMultiplayer, "Allow cheats for multiplayer?", GUI.skin.toggle);
+            if (optionState != AllowCheatsForMultiplayer)
+            {
+                ToggleCheatMode();
+            }
+        }
+
+        private void AllowModsOptionButton()
+        {
+            optionState = AllowModsForMultiplayer;
+            AllowModsForMultiplayer = GUILayout.Toggle(AllowModsForMultiplayer, "Allow mods for multiplayer?", GUI.skin.toggle);
+            if (optionState != AllowModsForMultiplayer)
+            {
+                ToggleModMode();
+            }
+        }
+
+        private void ToggleModMode()
+        {
+            OnToggled(AllowModsForMultiplayer, $"to use mods");
+        }
+
+        private void ToggleCheatMode()
+        {
+            if (AllowCheatsForMultiplayer && !Disable)
+            {
+                GreenHellGame.DEBUG = true;
+                MainLevel.Instance.m_GameMode = GameMode.Debug;
+            }
+            else
+            {
+                GreenHellGame.DEBUG = false;
+                MainLevel.Instance.m_GameMode = GreenHellGame.Instance.m_GHGameMode;
+            }
+            OnToggled(AllowCheatsForMultiplayer, $"to use cheats");
+        }
+
+        private void OnToggled(bool optionEnabled, string optionText)
+        {
+            if (optionEnabled)
             {
                 ShowHUDBigInfo(PermissionWasGrantedMessage(optionText), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage(optionText));
@@ -278,14 +339,19 @@ namespace ModManager
             {
                 string[] playerNames = GetPlayerNames();
                 SelectedPlayerName = playerNames[SelectedPlayerIndex];
-
-                P2PPeer playerToKick = P2PSession.Instance.m_RemotePeers.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
-                if (playerToKick != null)
+                if (!string.IsNullOrEmpty(SelectedPlayerName))
                 {
-                    var pp = P2PTransportLayer.Instance.GetCurrentLobbyMembers().ToList().Find(lm => lm.m_Address == playerToKick.m_Address);
-                    P2PTransportLayer.Instance.KickLobbyMember(pp);
-                    ShowHUDBigInfo(PlayerWasKickedMessage(SelectedPlayerName), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                    P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
+                    P2PPeer peerPlayerToKick = P2PSession.Instance.m_RemotePeers.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
+                    if (peerPlayerToKick != null)
+                    {
+                        P2PLobbyMemberInfo playerToKickLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers().ToList().Find(lm => lm.m_Address == peerPlayerToKick.m_Address);
+                        if (playerToKickLobbyMemberInfo != null)
+                        {
+                            P2PTransportLayer.Instance.KickLobbyMember(playerToKickLobbyMemberInfo);
+                            ShowHUDBigInfo(PlayerWasKickedMessage(SelectedPlayerName), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                            P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
+                        }
+                    }
                 }
             }
             catch (Exception exc)
@@ -298,12 +364,23 @@ namespace ModManager
         {
             try
             {
-                SaveGame.SaveCoop();
-                var players = P2PSession.Instance.m_RemotePeers.ToList();
-                P2PSession.Instance.Restart();
-                foreach (P2PPeer pPlayer in players)
+                if (ReplTools.IsCoopEnabled())
                 {
-                    P2PSession.Instance.JoinLobby(pPlayer.m_Address);
+                    ShowHUDBigInfo(SystemInfoServerRestartMessage(), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
+                    SaveGame.SaveCoop();
+                    List<P2PPeer> players = P2PSession.Instance.m_RemotePeers.ToList();
+                    P2PSession.Instance.Restart();
+
+                    if (players != null && players.Count > 0)
+                    {
+                        foreach (P2PPeer peerPlayer in players)
+                        {
+                            ShowHUDBigInfo($"Reconnecting player {peerPlayer.GetDisplayName()}...", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                            P2PSession.Instance.JoinLobby(peerPlayer.m_Address);
+                        }
+                        P2PTransportLayer.Instance.OpenSystemOverlay(P2PSystemOverlay.Players);
+                    }
                 }
             }
             catch (Exception exc)
@@ -318,7 +395,7 @@ namespace ModManager
             {
                 if (RequestsSendToHost >= 3)
                 {
-                    ShowHUDBigInfo("To avoid spamming, max. 3 requests can be send with the button.", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(MaximumRequestsSendMessage(3), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                     return;
                 }
                 P2PSession.Instance.SendTextChatMessage(GetClientCommandRequestToUseMods());
