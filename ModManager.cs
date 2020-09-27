@@ -26,7 +26,7 @@ namespace ModManager
 
         private bool ShowUI;
 
-        public Rect ModManagerScreen = new Rect(10f, 680f, 450f, 150f);
+        public static Rect ModManagerScreen = new Rect(10f, 850f, 450f, 150f);
 
         private static string SelectedPlayerName = string.Empty;
         private static int SelectedPlayerIndex = 0;
