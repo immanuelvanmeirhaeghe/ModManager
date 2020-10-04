@@ -168,8 +168,6 @@ namespace ModManager
             }
         }
 
-
-
         private void Start()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
@@ -363,8 +361,6 @@ namespace ModManager
                 MainLevel.Instance.m_GameMode = GameModeAtStart;
             }
             OnPermissionToggled(AllowCheatsForMultiplayer, $"to use cheats");
-
-            onPermissionValueChanged?.Invoke(AllowCheatsForMultiplayer);
         }
 
         private void OnPermissionToggled(bool optionEnabled, string optionText)
