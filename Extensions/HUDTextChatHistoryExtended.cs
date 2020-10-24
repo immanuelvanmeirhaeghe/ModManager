@@ -9,7 +9,10 @@
 
         private void SetModManager(bool optionValue)
         {
+            ModManager.RequestInfoShown = optionValue;
             ModManager.ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
+
+            ModManager.AllowModsAndCheatsForMultiplayer = optionValue;
             ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
         }
 
@@ -37,8 +40,9 @@
             {
                 if (isMaster)
                 {
+                    ModManager.AllowModsAndCheatsForMultiplayer = true;
                     ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
-                    StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats"));
+                    StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
                     ModManager.SetNewChatRequestId();
                 }
                 else

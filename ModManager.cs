@@ -373,13 +373,11 @@ namespace ModManager
             {
                 onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Permission to use mods and cheats has been");
                 onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
-                AllowModsAndCheatsForMultiplayer = state;
             }
 
             if (optionName == nameof(RequestInfoShown) && state != RequestInfoShown)
             {
                 onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how permission can be");
-                RequestInfoShown = state;
             }
         }
 
