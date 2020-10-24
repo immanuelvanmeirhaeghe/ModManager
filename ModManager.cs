@@ -194,6 +194,23 @@ namespace ModManager
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
             onOptionToggled += ModManager_onOptionToggled;
+            onPermissionValueChanged += ModManager_onPermissionValueChanged;
+        }
+
+        private void ModManager_onPermissionValueChanged(bool optionValue)
+        {
+            GreenHellGame.DEBUG = optionValue;
+            if (optionValue)
+            {
+                GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
+                MainLevel.Instance.m_GameMode = GameMode.Debug;
+            }
+            else
+            {
+                GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
+                MainLevel.Instance.m_GameMode = GameModeAtStart;
+            }
+            MainLevel.Instance.Initialize();
         }
 
         private void ModManager_onOptionToggled(bool optionValue, string optionText)
@@ -356,11 +373,13 @@ namespace ModManager
             {
                 onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Permission to use mods and cheats has been");
                 onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
+                AllowModsAndCheatsForMultiplayer = state;
             }
 
             if (optionName == nameof(RequestInfoShown) && state != RequestInfoShown)
             {
                 onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how permission can be");
+                RequestInfoShown = state;
             }
         }
 

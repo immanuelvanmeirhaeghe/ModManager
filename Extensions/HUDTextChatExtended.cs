@@ -10,7 +10,7 @@ namespace ModManager
         {
             if (!ModManager.RequestInfoShown)
             {
-                ModManager.RequestInfoShown = true;
+                ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));
                 m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandRequestToUseMods()));
             }
             base.OnShow();

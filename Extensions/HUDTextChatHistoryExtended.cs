@@ -39,6 +39,7 @@
                 {
                     ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
                     StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats"));
+                    ModManager.SetNewChatRequestId();
                 }
                 else
                 {
