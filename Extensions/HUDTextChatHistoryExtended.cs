@@ -2,17 +2,26 @@
 {
     class HUDTextChatHistoryExtended : HUDTextChatHistory
     {
+        protected override void Start()
+        {
+            base.Start();
+        }
+
+        private void SetModManager(bool optionValue)
+        {
+            ModManager.ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
+            ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+        }
+
         protected override void Awake()
         {
             base.Awake();
-            ModManager.AllowModsForMultiplayer = false;
-            ModManager.RequestInfoShown = false;
+            SetModManager(false);
         }
 
         protected override void OnDestroy()
         {
-            ModManager.AllowModsForMultiplayer = false;
-            ModManager.RequestInfoShown = false;
+            SetModManager(false);
             base.OnDestroy();
         }
 
@@ -28,11 +37,8 @@
             {
                 if (isMaster)
                 {
-                    ModManager.AllowModsForMultiplayer = true;
-                    ModManager.AllowCheatsForMultiplayer = true;
-                    GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowCheatsForMultiplayer) && !ModManager.Disable;
-                    ModManager.SetNewChatRequestId();
-                    StoreMessage(ModManager.PermissionWasGrantedMessage($"to use mods and cheats"));
+                    ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+                    StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats"));
                 }
                 else
                 {

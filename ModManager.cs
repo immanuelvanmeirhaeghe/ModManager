@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using DebugMode;
+using System.Reflection;
 
 namespace ModManager
 {
@@ -32,11 +34,15 @@ namespace ModManager
         private static int SelectedPlayerIndex = 0;
         private static int PlayerCount => P2PSession.Instance.m_RemotePeers.Count;
 
-        public static Rect ModManagerScreen = new Rect(550f, 550f, 450f, 150f);
+        public static Rect ModManagerScreen = new Rect(Screen.width / 25f, Screen.height / 25f, 450f, 150f);
 
         public delegate void OnPermissionValueChanged(bool optionValue);
 
         public static event OnPermissionValueChanged onPermissionValueChanged;
+
+        public delegate void OnOptionToggled(bool optionValue, string optionText);
+
+        public static event OnOptionToggled onOptionToggled;
 
         public ModManager()
         {
@@ -77,7 +83,13 @@ namespace ModManager
 
         public static bool AllowModsForMultiplayer { get; set; } = false;
 
-        public static bool AllowCheatsForMultiplayer { get; set; } = false;
+        public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
+
+        public static bool IsHostManager => ReplTools.AmIMaster();
+
+        public static bool IsHostInCoop => ReplTools.IsCoopEnabled();
+
+        public static bool IsHostWithPlayersInCoop => IsHostInCoop && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0;
 
         public static bool Disable { get; set; } = false;
 
@@ -103,6 +115,7 @@ namespace ModManager
         }
 
         public static string ChatRequestId { get; private set; } = string.Empty;
+
         public static void SetNewChatRequestId()
         {
             ChatRequestId = UnityEngine.Random.Range(1000, 9999).ToString();
@@ -113,39 +126,48 @@ namespace ModManager
 
         public static string ClientSystemInfoChatMessage(string command, Color? color = null)
             => SystemInfoChatMessage(
-                $"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use mods.");
+                $"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use mods.",
+                color);
 
         public static string HostSystemInfoChatMessage(string command, Color? color = null, Color? subColor = null)
             => SystemInfoChatMessage(
                 $"Hello <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.blue))}>{GetHostPlayerName()}</color></b>"
             + $"\nto enable the use of mods for {GetClientPlayerName()}, send <b><color=#{(subColor.HasValue ? ColorUtility.ToHtmlStringRGBA(subColor.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b>"
-            + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Be aware that this can be used for griefing!</color>");
+            + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Be aware that this can be used for griefing!</color>",
+                color);
 
         public static string RequestWasSentMessage(Color? color = null)
-            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>");
+            => SystemInfoChatMessage(
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>",
+                color);
 
-        public static string PermissionWasGrantedMessage(string permission, Color? color = null)
-            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Permission {permission} granted!</color>");
+        public static string PermissionWasGrantedMessage() => $"Permission granted!";
 
-        public static string PermissionWasRevokedMessage(string permission, Color? color = null)
-            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Permission {permission} revoked!</color>");
+        public static string PermissionWasRevokedMessage() => $"Permission  revoked!";
 
-        public static string FlagStateChangedMessage(bool flagState, string flagName, Color? color = null)
-    => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{flagName} set to {flagState}!</color>");
+        public static string FlagStateChangedMessage(bool flagState, string content, Color? color = null)
+            => SystemInfoChatMessage(
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{content} { (flagState ? "granted" : "revoked")  }!</color>",
+                color);
 
         public static string OnlyHostCanAllowMessage(Color? color = null)
-            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Only the host {GetHostPlayerName()} can grant permission!</color>");
+            => SystemInfoChatMessage(
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Only the host {GetHostPlayerName()} can grant permission!</color>",
+                color);
 
         public static string PlayerWasKickedMessage(string playerNameToKick, Color? color = null)
             => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{playerNameToKick} got kicked from the game!</color>");
 
         public static string MaximumRequestsSendMessage(int maxRequest, Color? color = null)
-            => SystemInfoChatMessage($"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Max. {maxRequest} requests can be send!</color>");
+            => SystemInfoChatMessage(
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Max. {maxRequest} requests can be send!</color>",
+                color);
 
         public static string SystemInfoServerRestartMessage(Color? color = null)
             => SystemInfoChatMessage(
                 $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}><b>Attention all players!</b></color>"
-             + $" \nGame host {GetHostPlayerName()} is restarting the server. \nYou will be automatically rejoining in a short while. Please hold.");
+             + $" \nGame host {GetHostPlayerName()} is restarting the server. \nYou will be automatically rejoining in a short while. Please hold.",
+                color);
 
         public static string SystemInfoChatMessage(string content, Color? color = null)
             => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
@@ -171,6 +193,21 @@ namespace ModManager
         private void Start()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
+            onOptionToggled += ModManager_onOptionToggled;
+        }
+
+        private void ModManager_onOptionToggled(bool optionValue, string optionText)
+        {
+            ShowHUDBigInfo(
+                FlagStateChangedMessage(optionValue, optionText),
+                $"{ModName} Info",
+                HUDInfoLogTextureType.Count.ToString()
+                );
+
+            if (IsHostWithPlayersInCoop)
+            {
+                P2PSession.Instance.SendTextChatMessage(FlagStateChangedMessage(optionValue, optionText));
+            }
         }
 
         private void Update()
@@ -232,17 +269,13 @@ namespace ModManager
         {
             using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
-                {
-                    CloseWindow();
-                }
+                ScreenToolbox(ModManagerScreen.width);
 
-                if (ReplTools.AmIMaster())
+                if (IsHostManager)
                 {
                     using (var vertical2Scope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
-                        AllowModsOptionButton();
-                        AllowCheatsOptionButton();
+                        AllowModsAndCheatsOption();
                         RequestInfoShownStateOptionButton();
                     }
                     using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
@@ -263,6 +296,14 @@ namespace ModManager
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+        }
+
+        private void ScreenToolbox(float x)
+        {
+            if (GUI.Button(new Rect(x - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
+            {
+                CloseWindow();
+            }
         }
 
         private void ClientRequestButton()
@@ -295,91 +336,31 @@ namespace ModManager
             }
         }
 
-        private void AllowCheatsOptionButton()
+        private void AllowModsAndCheatsOption()
         {
-            optionState = AllowCheatsForMultiplayer;
-            AllowCheatsForMultiplayer = GUILayout.Toggle(AllowCheatsForMultiplayer, "Allow cheats for multiplayer?", GUI.skin.toggle);
-            if (optionState != AllowCheatsForMultiplayer)
-            {
-                OnToggleCheatMode();
-            }
-        }
-
-        private void AllowModsOptionButton()
-        {
-            optionState = AllowModsForMultiplayer;
-            AllowModsForMultiplayer = GUILayout.Toggle(AllowModsForMultiplayer, "Allow mods for multiplayer?", GUI.skin.toggle);
-            if (optionState != AllowModsForMultiplayer)
-            {
-                OnToggleModMode();
-            }
+            optionState = AllowModsAndCheatsForMultiplayer;
+            AllowModsAndCheatsForMultiplayer = GUILayout.Toggle(AllowModsAndCheatsForMultiplayer, "Allow mods and cheats for multiplayer?", GUI.skin.toggle);
+            ToggleModOption(optionState, nameof(AllowModsAndCheatsForMultiplayer));
         }
 
         private void RequestInfoShownStateOptionButton()
         {
             optionState = RequestInfoShown;
             RequestInfoShown = GUILayout.Toggle(RequestInfoShown, "Chat request info shown?", GUI.skin.toggle);
-            if (optionState != RequestInfoShown)
-            {
-                ToggleRequestInfoShown();
-            }
+            ToggleModOption(optionState, nameof(RequestInfoShown));
         }
 
-        private void ToggleRequestInfoShown()
+        public static void ToggleModOption(bool state, string optionName)
         {
-            OnStateToggled(RequestInfoShown, nameof(RequestInfoShown));
-        }
-
-        private void OnStateToggled(bool optionEnabled, string optionText = "")
-        {
-            ShowHUDBigInfo(FlagStateChangedMessage(optionEnabled, optionText), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-            if (ReplTools.IsCoopEnabled() && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0)
+            if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && state != AllowModsAndCheatsForMultiplayer)
             {
-                P2PSession.Instance.SendTextChatMessage(FlagStateChangedMessage(optionEnabled, optionText));
+                onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Permission to use mods and cheats has been");
+                onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
             }
-        }
 
-        private void OnToggleModMode()
-        {
-            OnPermissionToggled(AllowModsForMultiplayer, $"to use mods");
-
-            onPermissionValueChanged?.Invoke(AllowModsForMultiplayer);
-        }
-
-        private void OnToggleCheatMode()
-        {
-            if (AllowCheatsForMultiplayer)
+            if (optionName == nameof(RequestInfoShown) && state != RequestInfoShown)
             {
-                GreenHellGame.DEBUG = true;
-                GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
-                MainLevel.Instance.m_GameMode = GameMode.Debug;
-            }
-            else
-            {
-                GreenHellGame.DEBUG = false;
-                GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
-                MainLevel.Instance.m_GameMode = GameModeAtStart;
-            }
-            OnPermissionToggled(AllowCheatsForMultiplayer, $"to use cheats");
-        }
-
-        private void OnPermissionToggled(bool optionEnabled, string optionText)
-        {
-            if (optionEnabled)
-            {
-                ShowHUDBigInfo(PermissionWasGrantedMessage(optionText), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                if (ReplTools.IsCoopEnabled() && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0)
-                {
-                    P2PSession.Instance.SendTextChatMessage(PermissionWasGrantedMessage(optionText));
-                }
-            }
-            else
-            {
-                ShowHUDBigInfo(PermissionWasRevokedMessage(optionText), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                if (ReplTools.IsCoopEnabled() && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0)
-                {
-                    P2PSession.Instance.SendTextChatMessage(PermissionWasRevokedMessage(optionText));
-                }
+                onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how permission can be");
             }
         }
 

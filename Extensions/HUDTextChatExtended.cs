@@ -33,7 +33,7 @@ namespace ModManager
                 {
                     ModManager.SetNewChatRequestId();
                     P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.ChatRequestId)));
-                    m_History.StoreMessage(ModManager.RequestWasSentMessage(), "");
+                    m_History.StoreMessage(ModManager.RequestWasSentMessage());
                 }
                 else
                 {
