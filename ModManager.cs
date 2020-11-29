@@ -21,6 +21,7 @@ namespace ModManager
         private static readonly string ModName = nameof(ModManager);
         private static readonly float ModScreenTotalWidth = 500f;
         private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenMinWidth = 50f;
         private static readonly float ModScreenMinHeight = 30f;
         private static readonly float ModScreenMaxHeight = 180f;
 
@@ -32,7 +33,7 @@ namespace ModManager
 
         private bool ShowUI = false;
 
-        public static Rect ModManagerScreen = new Rect(Screen.width / 10f, Screen.height / 10f, ModScreenTotalWidth, ModScreenTotalHeight);
+        public static Rect ModManagerScreen = new Rect(Screen.width / 2f, Screen.height / 2f, ModScreenTotalWidth, ModScreenTotalHeight);
         public static GameMode GameModeAtStart;
         public static string SelectedPlayerName;
         public static int SelectedPlayerIndex;
@@ -378,7 +379,7 @@ namespace ModManager
         {
             if (!IsMinimized)
             {
-                ModManagerScreen.Set(ModManagerScreen.x, Screen.height - ModScreenMinHeight, ModScreenTotalWidth, ModScreenMinHeight);
+                ModManagerScreen.Set(ModManagerScreen.x, Screen.height - ModScreenMinHeight, ModScreenMinWidth, ModScreenMinHeight);
                 IsMinimized = true;
             }
             else
