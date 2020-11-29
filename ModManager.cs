@@ -22,11 +22,10 @@ namespace ModManager
         private static readonly float ModScreenTotalWidth = 500f;
         private static readonly float ModScreenTotalHeight = 150f;
         private static readonly float ModScreenMinWidth = 50f;
-        private static readonly float ModScreenMinHeight = 30f;
-        private static readonly float ModScreenMaxHeight = 180f;
-
+        private static readonly float ModScreenMaxWidth = 550f;
+        private static readonly float ModScreenMinHeight = 50f;
+        private static readonly float ModScreenMaxHeight = 200f;
         private static bool IsMinimized { get; set; } = false;
-
 
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
@@ -37,48 +36,12 @@ namespace ModManager
         public static GameMode GameModeAtStart;
         public static string SelectedPlayerName;
         public static int SelectedPlayerIndex;
-
         public static int PlayerCount => P2PSession.Instance.m_RemotePeers.Count;
 
         public delegate void OnPermissionValueChanged(bool optionValue);
         public static event OnPermissionValueChanged onPermissionValueChanged;
         public delegate void OnOptionToggled(bool optionValue, string optionText);
         public static event OnOptionToggled onOptionToggled;
-
-        public ModManager()
-        {
-            useGUILayout = true;
-            Instance = this;
-        }
-
-        public static ModManager Get()
-        {
-            return Instance;
-        }
-
-        public void ShowHUDBigInfo(string text)
-        {
-            string header = $"{ModName} Info";
-            string textureName = HUDInfoLogTextureType.Count.ToString();
-
-            HUDBigInfo bigInfo = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
-            HUDBigInfoData.s_Duration = 6f;
-            HUDBigInfoData bigInfoData = new HUDBigInfoData
-            {
-                m_Header = header,
-                m_Text = text,
-                m_TextureName = textureName,
-                m_ShowTime = Time.time
-            };
-            bigInfo.AddInfo(bigInfoData);
-            bigInfo.Show(true);
-        }
-
-        public void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
-        {
-            Localization localization = GreenHellGame.Instance.GetLocalization();
-            ((HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
-        }
 
         public static bool RequestInfoShown { get; set; } = false;
         public static int RequestsSendToHost { get; set; } = 0;
@@ -171,6 +134,41 @@ namespace ModManager
         public static string PermissionChangedMessage(string permission) => $"Permission to use mods and cheats in multiplayer was {permission}";
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
+
+        public ModManager()
+        {
+            useGUILayout = true;
+            Instance = this;
+        }
+
+        public static ModManager Get()
+        {
+            return Instance;
+        }
+
+        public void ShowHUDBigInfo(string text)
+        {
+            string header = $"{ModName} Info";
+            string textureName = HUDInfoLogTextureType.Count.ToString();
+
+            HUDBigInfo bigInfo = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
+            HUDBigInfoData.s_Duration = 6f;
+            HUDBigInfoData bigInfoData = new HUDBigInfoData
+            {
+                m_Header = header,
+                m_Text = text,
+                m_TextureName = textureName,
+                m_ShowTime = Time.time
+            };
+            bigInfo.AddInfo(bigInfoData);
+            bigInfo.Show(true);
+        }
+
+        public void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
+        {
+            Localization localization = GreenHellGame.Instance.GetLocalization();
+            ((HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
+        }
 
         private void EnableCursor(bool blockPlayer = false)
         {
@@ -291,10 +289,17 @@ namespace ModManager
 
         private void InitModManagerScreen(int windowID)
         {
-            using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box, GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModScreenMinHeight), GUILayout.MaxHeight(ModScreenMaxHeight)))
+            using (var modContentScope = new GUILayout.VerticalScope(
+                                                                                                                    GUI.skin.box,
+                                                                                                                    GUILayout.ExpandWidth(true),
+                                                                                                                    GUILayout.MinWidth(ModScreenMinWidth),
+                                                                                                                    GUILayout.MaxWidth(ModScreenMaxWidth),
+                                                                                                                    GUILayout.ExpandHeight(true),
+                                                                                                                    GUILayout.MinHeight(ModScreenMinHeight),
+                                                                                                                    GUILayout.MaxHeight(ModScreenMaxHeight)))
             {
                 ScreenMenuBox();
-                if (!!IsMinimized)
+                if (!IsMinimized)
                 {
                     if (IsHostManager)
                     {
