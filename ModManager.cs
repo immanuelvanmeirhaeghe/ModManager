@@ -25,6 +25,8 @@ namespace ModManager
         private static readonly float ModScreenMaxWidth = 550f;
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = 200f;
+        private static float ModScreenStartPositionX { get; set; } = Screen.width - ModScreenMaxWidth;
+        private static float ModScreenStartPositionY { get; set; } = Screen.height - ModScreenMaxHeight;
         private static bool IsMinimized { get; set; } = false;
 
         private static HUDManager LocalHUDManager;
@@ -32,7 +34,7 @@ namespace ModManager
 
         private bool ShowUI = false;
 
-        public static Rect ModManagerScreen = new Rect(Screen.width / 2f, Screen.height / 2f, ModScreenTotalWidth, ModScreenTotalHeight);
+        public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         public static GameMode GameModeAtStart;
         public static string SelectedPlayerName;
         public static int SelectedPlayerIndex;
@@ -384,12 +386,14 @@ namespace ModManager
         {
             if (!IsMinimized)
             {
-                ModManagerScreen.Set(ModManagerScreen.x, Screen.height - ModScreenMinHeight, ModScreenMinWidth, ModScreenMinHeight);
+                ModScreenStartPositionX = ModManagerScreen.x;
+                ModScreenStartPositionY = ModManagerScreen.y;
+                ModManagerScreen.Set(ModManagerScreen.x, ModManagerScreen.y, ModScreenMinWidth, ModScreenMinHeight);
                 IsMinimized = true;
             }
             else
             {
-                ModManagerScreen.Set(ModManagerScreen.x, Screen.height / ModScreenMinHeight, ModScreenTotalWidth, ModScreenTotalHeight);
+                ModManagerScreen.Set(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
                 IsMinimized = false;
             }
             InitWindow();
@@ -496,6 +500,5 @@ namespace ModManager
                 ModAPI.Log.Write($"[{ModName}:{nameof(OnClickRequestModsButton)}] throws exception:\n{exc.Message}");
             }
         }
-
     }
 }
