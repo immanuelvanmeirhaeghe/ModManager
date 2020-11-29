@@ -12,4 +12,11 @@ namespace ModManager.Enums
 		AllowCheatsValueChanged,
 		Count
 	}
+
+    public enum MessageType
+    {
+        Info,
+        Warning,
+        Error
+    }
 }

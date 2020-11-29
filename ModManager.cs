@@ -2,8 +2,10 @@
  * This code was inspired by Moritz. Thank you!
  * */
 using Enums;
+using ModManager.Enums;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
 
@@ -17,17 +19,20 @@ namespace ModManager
     {
         private static ModManager Instance;
         private static readonly string ModName = nameof(ModManager);
-        private static readonly float ModScreenWidth = 450f;
-        private static readonly float ModScreenMaxHeight = 150f;
-        private static readonly float ModScreenMinHeight = 20f;
+        private static readonly float ModScreenTotalWidth = 500f;
+        private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenMinHeight = 30f;
+        private static readonly float ModScreenMaxHeight = 180f;
+
         private static bool IsMinimized { get; set; } = false;
+
 
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
 
         private bool ShowUI = false;
 
-        public static Rect ModManagerScreen = new Rect(Screen.width / 25f, Screen.height / 25f, ModScreenWidth, ModScreenMaxHeight);
+        public static Rect ModManagerScreen = new Rect(Screen.width / 10f, Screen.height / 10f, ModScreenTotalWidth, ModScreenTotalHeight);
         public static GameMode GameModeAtStart;
         public static string SelectedPlayerName;
         public static int SelectedPlayerIndex;
@@ -50,18 +55,22 @@ namespace ModManager
             return Instance;
         }
 
-        public void ShowHUDBigInfo(string text, string header, string textureName)
+        public void ShowHUDBigInfo(string text)
         {
-            HUDBigInfo obj = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
-            HUDBigInfoData data = new HUDBigInfoData
+            string header = $"{ModName} Info";
+            string textureName = HUDInfoLogTextureType.Count.ToString();
+
+            HUDBigInfo bigInfo = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
+            HUDBigInfoData.s_Duration = 6f;
+            HUDBigInfoData bigInfoData = new HUDBigInfoData
             {
                 m_Header = header,
                 m_Text = text,
                 m_TextureName = textureName,
                 m_ShowTime = Time.time
             };
-            obj.AddInfo(data);
-            obj.Show(show: true);
+            bigInfo.AddInfo(bigInfoData);
+            bigInfo.Show(true);
         }
 
         public void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
@@ -158,6 +167,10 @@ namespace ModManager
         public static string SystemInfoChatMessage(string content, Color? color = null)
             => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
 
+        public static string PermissionChangedMessage(string permission) => $"Permission to use mods and cheats in multiplayer was {permission}";
+        public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
+            => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
+
         private void EnableCursor(bool blockPlayer = false)
         {
             CursorManager.Get().ShowCursor(blockPlayer);
@@ -212,10 +225,7 @@ namespace ModManager
         private void ModManager_onOptionToggled(bool optionValue, string optionText)
         {
             ShowHUDBigInfo(
-                FlagStateChangedMessage(optionValue, optionText),
-                $"{ModName} Info",
-                HUDInfoLogTextureType.Count.ToString()
-                );
+                FlagStateChangedMessage(optionValue, optionText));
 
             if (IsHostWithPlayersInCoop)
             {
@@ -258,7 +268,7 @@ namespace ModManager
         private void InitWindow()
         {
             int wid = GetHashCode();
-            ModManagerScreen = GUILayout.Window(wid, ModManagerScreen, InitModManagerScreen, $"{ModName}", GUI.skin.window , GUILayout.MinHeight(ModScreenMinHeight), GUILayout.MaxHeight(ModScreenMaxHeight));
+            ModManagerScreen = GUILayout.Window(wid, ModManagerScreen, InitModManagerScreen, $"{ModName}", GUI.skin.window);
         }
 
         private static void InitData()
@@ -280,44 +290,85 @@ namespace ModManager
 
         private void InitModManagerScreen(int windowID)
         {
-            using (var screenContentScope = new GUILayout.VerticalScope(GUI.skin.box, GUILayout.ExpandHeight(true)))
+            using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box, GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModScreenMinHeight), GUILayout.MaxHeight(ModScreenMaxHeight)))
             {
                 ScreenMenuBox();
-
-                if (IsHostManager)
+                if (!!IsMinimized)
                 {
-                    using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    if (IsHostManager)
                     {
-                        AllowModsAndCheatsOption();
-                        RequestInfoShownStateOptionButton();
+                        HostManagerBox();
                     }
-                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    else
                     {
-                        KickPlayerButton();
-                    }
-                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                    {
-                        RestartServerButton();
-                    }
-                }
-                else
-                {
-                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                    {
-                        ClientRequestButton();
+                        ClientManagerBox();
                     }
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
+        private void ClientManagerBox()
+        {
+            using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            {
+                GUILayout.Label("Send chat request to host to allow mods (max. 3 to avoid spam.)", GUI.skin.label);
+                if (GUILayout.Button(GetClientCommandRequestToUseMods(), GUI.skin.button, GUILayout.MaxWidth(200)))
+                {
+                    OnClickRequestModsButton();
+                }
+            }
+        }
+
+        private void HostManagerBox()
+        {
+            ModOptionsBox();
+            KickPlayerBox();
+            HostServerBox();
+        }
+
+        private void HostServerBox()
+        {
+            using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            {
+                GUILayout.Label("Save and restart host session with current players", GUI.skin.label);
+                if (GUILayout.Button("Restart", GUI.skin.button, GUILayout.MaxWidth(200)))
+                {
+                    ShowHUDBigInfo(SystemInfoServerRestartMessage());
+                    RestartHost();
+                }
+            }
+        }
+
+        private void KickPlayerBox()
+        {
+            using (var playerListScope = new GUILayout.VerticalScope(GUI.skin.box, GUILayout.ExpandHeight(true)))
+            {
+                GUILayout.Label("Select player: ", GUI.skin.label);
+                SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, GetPlayerNames(), 2, GUI.skin.button);
+                if (GUILayout.Button("Kick player", GUI.skin.button, GUILayout.MaxWidth(200)))
+                {
+                    OnClickKickPlayerButton();
+                }
+            }
+        }
+
+        private void ModOptionsBox()
+        {
+            using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                AllowModsAndCheatsOption();
+                RequestInfoShownOption();
+            }
+        }
+
         private void ScreenMenuBox()
         {
-            if (GUI.Button(new Rect(ModScreenWidth - 40f, 0f, 20f, 20f), "-", GUI.skin.button))
+            if (GUI.Button(new Rect(ModManagerScreen.width - 40f, 0f, 20f, 20f), "-", GUI.skin.button))
             {
                 CollapseWindow();
             }
-            if (GUI.Button(new Rect(ModScreenWidth - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
+            if (GUI.Button(new Rect(ModManagerScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
             {
                 CloseWindow();
             }
@@ -327,47 +378,15 @@ namespace ModManager
         {
             if (!IsMinimized)
             {
-                //ModManagerScreen.Set(ModManagerScreen.x, ModManagerScreen.y, ModManagerScreen.width, ModScreenMinHeight);
-                ModManagerScreen = new Rect(ModManagerScreen.x, ModManagerScreen.y, ModManagerScreen.width, ModScreenMinHeight);
+                ModManagerScreen.Set(ModManagerScreen.x, Screen.height - ModScreenMinHeight, ModScreenTotalWidth, ModScreenMinHeight);
                 IsMinimized = true;
             }
             else
             {
-                //ModManagerScreen.Set(ModManagerScreen.x, ModManagerScreen.y, ModManagerScreen.width, ModScreenMaxHeight);
-                ModManagerScreen = new Rect(ModManagerScreen.x, ModManagerScreen.y, ModManagerScreen.width, ModScreenMaxHeight);
+                ModManagerScreen.Set(ModManagerScreen.x, Screen.height / ModScreenMinHeight, ModScreenTotalWidth, ModScreenTotalHeight);
                 IsMinimized = false;
             }
-        }
-
-        private void ClientRequestButton()
-        {
-            GUILayout.Label("Send chat request to host to allow mods (max. 3 to avoid spam.)", GUI.skin.label);
-            if (GUILayout.Button(GetClientCommandRequestToUseMods(), GUI.skin.button))
-            {
-                OnClickRequestModsButton();
-                CloseWindow();
-            }
-        }
-
-        private void RestartServerButton()
-        {
-            GUILayout.Label("Save and restart host session with current players", GUI.skin.label);
-            if (GUILayout.Button("Restart", GUI.skin.button))
-            {
-                ShowHUDBigInfo(SystemInfoServerRestartMessage(), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                RestartHost();
-                CloseWindow();
-            }
-        }
-
-        private void KickPlayerButton()
-        {
-            GUILayout.Label("Select player: ", GUI.skin.label);
-            SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, GetPlayerNames(), 2, GUI.skin.button);
-            if (GUILayout.Button("Kick player", GUI.skin.button))
-            {
-                OnClickKickPlayerButton();
-            }
+            InitWindow();
         }
 
         private void AllowModsAndCheatsOption()
@@ -377,7 +396,7 @@ namespace ModManager
             ToggleModOption(optionState, nameof(AllowModsAndCheatsForMultiplayer));
         }
 
-        private void RequestInfoShownStateOptionButton()
+        private void RequestInfoShownOption()
         {
             bool optionState = RequestInfoShown;
             RequestInfoShown = GUILayout.Toggle(RequestInfoShown, "Chat request info shown?", GUI.skin.toggle);
@@ -413,7 +432,7 @@ namespace ModManager
                         if (playerToKickLobbyMemberInfo != null)
                         {
                             P2PTransportLayer.Instance.KickLobbyMember(playerToKickLobbyMemberInfo);
-                            ShowHUDBigInfo(PlayerWasKickedMessage(SelectedPlayerName), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                            ShowHUDBigInfo(HUDBigInfoMessage(PlayerWasKickedMessage(SelectedPlayerName), MessageType.Info, Color.green));
                             P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
                         }
                     }
@@ -421,7 +440,7 @@ namespace ModManager
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickKickPlayerButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}:{nameof(OnClickKickPlayerButton)}] throws exception:\n{exc.Message}");
             }
         }
 
@@ -429,27 +448,27 @@ namespace ModManager
         {
             try
             {
+                ShowHUDBigInfo(HUDBigInfoMessage($"Restarting host...", MessageType.Info, Color.green));
                 if (IsHostInCoop)
                 {
                     P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
                     SaveGame.SaveCoop();
-                    List<P2PPeer> players = P2PSession.Instance.m_RemotePeers.ToList();
-                    P2PSession.Instance.Restart();
-
-                    if (players != null && players.Count > 0)
-                    {
-                        foreach (P2PPeer peerPlayer in players)
-                        {
-                            ShowHUDBigInfo($"Reconnecting player {peerPlayer.GetDisplayName()}...", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                            P2PSession.Instance.JoinLobby(peerPlayer.m_Address);
-                        }
-                        P2PTransportLayer.Instance.OpenSystemOverlay(P2PSystemOverlay.Players);
-                    }
+                    ReloadLobby();
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(RestartHost)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}:{nameof(RestartHost)}] throws exception:\n{exc.Message}");
+            }
+        }
+
+        private void ReloadLobby()
+        {
+            ReadOnlyCollection<P2PLobbyMemberInfo> hostedLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers();
+            if (hostedLobbyMemberInfo != null)
+            {
+                P2PSession.Instance.UpdateDefaultRespawnPosition(LocalPlayer.GetWorldPosition());
+                P2PSession.Instance.Restart();
             }
         }
 
@@ -459,16 +478,16 @@ namespace ModManager
             {
                 if (RequestsSendToHost >= 3)
                 {
-                    ShowHUDBigInfo(MaximumRequestsSendMessage(3), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(MaximumRequestsSendMessage(3));
                     return;
                 }
                 P2PSession.Instance.SendTextChatMessage(GetClientCommandRequestToUseMods());
-                ShowHUDBigInfo(RequestWasSentMessage(), $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo(RequestWasSentMessage());
                 RequestsSendToHost++;
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickRequestModsButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}:{nameof(OnClickRequestModsButton)}] throws exception:\n{exc.Message}");
             }
         }
 
