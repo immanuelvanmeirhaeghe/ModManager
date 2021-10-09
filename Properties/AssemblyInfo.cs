@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("ModAPI.ModManager")]
 [assembly: AssemblyDescription("ModManager is a mod for Green Hell that aims to be a tool to manage mods in multiplayer.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Dragon Legion")]
+[assembly: AssemblyCompany("[Dragon Legion]Immaanuel")]
 [assembly: AssemblyProduct("ModAPI.ModManager")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.3.3")]
-[assembly: AssemblyFileVersion("1.0.3.3")]
+[assembly: AssemblyVersion("1.0.3.4")]
+[assembly: AssemblyFileVersion("1.0.3.4")]

@@ -6,38 +6,46 @@ using ModManager.Enums;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Xml;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ModManager
 {
     /// <summary>
-    /// ModManager is a mod for Green Hell
-    /// that aims to be a tool to manage mods in multiplayer.
+    /// ModManager is a mod for Green Hell, which aims to be a tool for players
+    /// who would like to be able to use ModAPI mods in multiplayer when not being host.
+    /// Press HOME (default) or the key configurable in ModAPI to open the main mod screen.
     /// </summary>
     public class ModManager : MonoBehaviour
     {
         private static ModManager Instance;
+
         private static readonly string ModName = nameof(ModManager);
         private static readonly float ModScreenTotalWidth = 500f;
         private static readonly float ModScreenTotalHeight = 150f;
         private static readonly float ModScreenMinWidth = 450f;
-        private static readonly float ModScreenMaxWidth = 550f;
+        private static readonly float ModScreenMaxWidth = 500f;
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = 200f;
-        private static float ModScreenStartPositionX { get; set; } = Screen.width - ModScreenMaxWidth;
-        private static float ModScreenStartPositionY { get; set; } = Screen.height - ModScreenMaxHeight;
+        private static float ModScreenStartPositionX { get; set; } = 0f;
+        private static float ModScreenStartPositionY { get; set; } = 0f;
         private static bool IsMinimized { get; set; } = false;
 
+        private static CursorManager LocalCursorManager;
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
 
+        private Color DefaultGuiColor = GUI.color;
         private bool ShowUI = false;
 
         public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         public static GameMode GameModeAtStart;
-        public static string SelectedPlayerName;
-        public static int SelectedPlayerIndex;
+        public static string SelectedPlayerName { get; set; } = string.Empty;
+        public static int SelectedPlayerIndex { get; set; } = 0;
+
         public static int PlayerCount => P2PSession.Instance.m_RemotePeers.Count;
 
         public delegate void OnPermissionValueChanged(bool optionValue);
@@ -49,18 +57,25 @@ namespace ModManager
         public static int RequestsSendToHost { get; set; } = 0;
         public static bool AllowModsForMultiplayer { get; set; } = false;
         public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
-        public static bool IsHostManager => ReplTools.AmIMaster();
-        public static bool IsHostInCoop => ReplTools.IsCoopEnabled();
-        public static bool IsHostWithPlayersInCoop => IsHostInCoop && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0;
+        public static bool IsHostManager
+            => ReplTools.AmIMaster();
+        public static bool IsHostInCoop
+            => ReplTools.IsCoopEnabled();
+        public static bool IsHostWithPlayersInCoop
+            => IsHostInCoop && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0;
         public static bool Disable { get; set; } = false;
 
-        public static string GetClientCommandRequestToUseMods() => "!requestMods";
+        public static string GetClientCommandToUseMods()
+            => "!requestMods";
 
-        public static string GetHostCommandToAllowMods(string chatRequestId) => $"!allowMods{chatRequestId}";
+        public static string GetHostCommandToAllowMods(string chatRequestId)
+            => $"!allowMods{chatRequestId}";
 
-        public static string GetClientPlayerName() => ReplTools.GetLocalPeer().GetDisplayName();
+        public static string GetClientPlayerName()
+            => ReplTools.GetLocalPeer().GetDisplayName();
 
-        public static string GetHostPlayerName() => P2PSession.Instance.GetSessionMaster().GetDisplayName();
+        public static string GetHostPlayerName()
+            => P2PSession.Instance.GetSessionMaster().GetDisplayName();
 
         public static string[] GetPlayerNames()
         {
@@ -102,9 +117,11 @@ namespace ModManager
                 $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>",
                 color);
 
-        public static string PermissionWasGrantedMessage() => $"Permission granted!";
+        public static string PermissionWasGrantedMessage()
+            => $"Permission granted!";
 
-        public static string PermissionWasRevokedMessage() => $"Permission  revoked!";
+        public static string PermissionWasRevokedMessage()
+            => $"Permission  revoked!";
 
         public static string FlagStateChangedMessage(bool flagState, string content, Color? color = null)
             => SystemInfoChatMessage(
@@ -133,7 +150,9 @@ namespace ModManager
         public static string SystemInfoChatMessage(string content, Color? color = null)
             => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
 
-        public static string PermissionChangedMessage(string permission) => $"Permission to use mods and cheats in multiplayer was {permission}";
+        public static string PermissionChangedMessage(string permission)
+            => $"Permission to use mods and cheats in multiplayer was {permission}";
+
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
@@ -174,7 +193,7 @@ namespace ModManager
 
         private void EnableCursor(bool blockPlayer = false)
         {
-            CursorManager.Get().ShowCursor(blockPlayer);
+            LocalCursorManager.ShowCursor(blockPlayer);
 
             if (blockPlayer)
             {
@@ -190,11 +209,53 @@ namespace ModManager
             }
         }
 
+        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
+        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Home;
+        private KeyCode GetConfigurableKey(string buttonId)
+        {
+            KeyCode configuredKeyCode = default;
+            string configuredKeybinding = string.Empty;
+
+            try
+            {
+                if (File.Exists(RuntimeConfigurationFile))
+                {
+                    using (var xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
+                    {
+                        while (xmlReader.Read())
+                        {
+                            if (xmlReader["ID"] == ModName)
+                            {
+                                if (xmlReader.ReadToFollowing(nameof(Button)) && xmlReader["ID"] == buttonId)
+                                {
+                                    configuredKeybinding = xmlReader.ReadElementContentAsString();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Keypad").Replace("Oem", "");
+
+                configuredKeyCode = (KeyCode)(!string.IsNullOrEmpty(configuredKeybinding)
+                                                            ? Enum.Parse(typeof(KeyCode), configuredKeybinding)
+                                                            : GetType().GetProperty(buttonId)?.GetValue(this));
+                return configuredKeyCode;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(GetConfigurableKey));
+                configuredKeyCode = (KeyCode)(GetType().GetProperty(buttonId)?.GetValue(this));
+                return configuredKeyCode;
+            }
+        }
+
         private void Start()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
             onOptionToggled += ModManager_onOptionToggled;
             onPermissionValueChanged += ModManager_onPermissionValueChanged;
+            ModKeybindingId = GetConfigurableKey(nameof(ModKeybindingId));
         }
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
@@ -210,17 +271,6 @@ namespace ModManager
                 GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
                 MainLevel.Instance.m_GameMode = GameModeAtStart;
             }
-
-            if (IsHostWithPlayersInCoop)
-            {
-                RestartHost();
-            }
-            else
-            {
-                SaveGame.Save();
-            }
-
-            MainLevel.Instance.Initialize();
         }
 
         private void ModManager_onOptionToggled(bool optionValue, string optionText)
@@ -236,7 +286,7 @@ namespace ModManager
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Home))
+            if (Input.GetKeyDown(ModKeybindingId))
             {
                 if (!ShowUI)
                 {
@@ -270,23 +320,24 @@ namespace ModManager
         {
             int wid = GetHashCode();
             ModManagerScreen = GUILayout.Window(
-                                                                                wid,
-                                                                                ModManagerScreen,
-                                                                                InitModManagerScreen,
-                                                                                ModName,
-                                                                                GUI.skin.window,
-                                                                                GUILayout.ExpandWidth(true),
-                                                                                GUILayout.MinWidth(ModScreenMinWidth),
-                                                                                GUILayout.MaxWidth(ModScreenMaxWidth),
-                                                                                GUILayout.ExpandHeight(true),
-                                                                                GUILayout.MinHeight(ModScreenMinHeight),
-                                                                                GUILayout.MaxHeight(ModScreenMaxHeight));
+                                                wid,
+                                                ModManagerScreen,
+                                                InitModManagerScreen,
+                                                ModName,
+                                                GUI.skin.window,
+                                                GUILayout.ExpandWidth(true),
+                                                GUILayout.MinWidth(ModScreenMinWidth),
+                                                GUILayout.MaxWidth(ModScreenMaxWidth),
+                                                GUILayout.ExpandHeight(true),
+                                                GUILayout.MinHeight(ModScreenMinHeight),
+                                                GUILayout.MaxHeight(ModScreenMaxHeight));
         }
 
         private static void InitData()
         {
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
+            LocalCursorManager = CursorManager.Get();
         }
 
         private static void InitSkinUI()
@@ -325,10 +376,19 @@ namespace ModManager
 
         private void ClientManagerBox()
         {
-            using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            using (var clientmngScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                GUILayout.Label("Client Manager: ", GUI.skin.label);
+                ClientRequestBox();
+            }
+        }
+
+        private void ClientRequestBox()
+        {
+            using (var clientrqtScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
                 GUILayout.Label("Send chat request to host to allow mods (max. 3 to avoid spam.)", GUI.skin.label);
-                if (GUILayout.Button(GetClientCommandRequestToUseMods(), GUI.skin.button, GUILayout.MaxWidth(200)))
+                if (GUILayout.Button(GetClientCommandToUseMods(), GUI.skin.button))
                 {
                     OnClickRequestModsButton();
                 }
@@ -337,17 +397,21 @@ namespace ModManager
 
         private void HostManagerBox()
         {
-            ModOptionsBox();
-            KickPlayerBox();
-            HostServerBox();
+            using (var hostmngScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                GUILayout.Label("Host Manager: ", GUI.skin.label);
+                ModOptionsBox();
+                KickPlayerBox();
+                HostServerBox();
+            }
         }
 
         private void HostServerBox()
         {
-            using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            using (var hostsrvScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
                 GUILayout.Label("Save and restart host session with current players", GUI.skin.label);
-                if (GUILayout.Button("Restart", GUI.skin.button, GUILayout.MaxWidth(200)))
+                if (GUILayout.Button("Restart", GUI.skin.button))
                 {
                     ShowHUDBigInfo(SystemInfoServerRestartMessage());
                     RestartHost();
@@ -357,14 +421,26 @@ namespace ModManager
 
         private void KickPlayerBox()
         {
-            using (var playerListScope = new GUILayout.VerticalScope(GUI.skin.box, GUILayout.ExpandHeight(true)))
+            try
             {
-                GUILayout.Label("Select player: ", GUI.skin.label);
-                SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, GetPlayerNames(), 2, GUI.skin.button);
-                if (GUILayout.Button("Kick player", GUI.skin.button, GUILayout.MaxWidth(200)))
+                using (var playerListScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    OnClickKickPlayerButton();
+                    string[] playerNames = GetPlayerNames();
+                    if (playerNames != null)
+                    {
+                        GUILayout.Label("Select player grid: ", GUI.skin.label);
+                        SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, playerNames, 3, GUI.skin.button);
+                        SelectedPlayerName = playerNames[SelectedPlayerIndex];
+                        if (GUILayout.Button("Kick player", GUI.skin.button, GUILayout.MaxWidth(200)))
+                        {
+                            OnClickKickPlayerButton();
+                        }
+                    }
                 }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(KickPlayerBox));
             }
         }
 
@@ -406,16 +482,16 @@ namespace ModManager
 
         private void AllowModsAndCheatsOption()
         {
-            bool optionState = AllowModsAndCheatsForMultiplayer;
+            bool _allowModsAndCheatsForMultiplayerValue = AllowModsAndCheatsForMultiplayer;
             AllowModsAndCheatsForMultiplayer = GUILayout.Toggle(AllowModsAndCheatsForMultiplayer, "Allow mods and cheats for multiplayer?", GUI.skin.toggle);
-            ToggleModOption(optionState, nameof(AllowModsAndCheatsForMultiplayer));
+            ToggleModOption(_allowModsAndCheatsForMultiplayerValue, nameof(AllowModsAndCheatsForMultiplayer));
         }
 
         private void RequestInfoShownOption()
         {
-            bool optionState = RequestInfoShown;
+            bool _requestInfoShownValue = RequestInfoShown;
             RequestInfoShown = GUILayout.Toggle(RequestInfoShown, "Chat request info shown?", GUI.skin.toggle);
-            ToggleModOption(optionState, nameof(RequestInfoShown));
+            ToggleModOption(_requestInfoShownValue, nameof(RequestInfoShown));
         }
 
         public static void ToggleModOption(bool optionState, string optionName)
@@ -429,6 +505,7 @@ namespace ModManager
             if (optionName == nameof(RequestInfoShown) && optionState != RequestInfoShown)
             {
                 onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how permission can be");
+                RequestsSendToHost = 0;
             }
         }
 
@@ -440,10 +517,10 @@ namespace ModManager
                 SelectedPlayerName = playerNames[SelectedPlayerIndex];
                 if (!string.IsNullOrEmpty(SelectedPlayerName))
                 {
-                    P2PPeer peerPlayerToKick = P2PSession.Instance.m_RemotePeers.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
+                    P2PPeer peerPlayerToKick = P2PSession.Instance.m_RemotePeers?.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
                     if (peerPlayerToKick != null)
                     {
-                        P2PLobbyMemberInfo playerToKickLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers().ToList().Find(lm => lm.m_Address == peerPlayerToKick.m_Address);
+                        P2PLobbyMemberInfo playerToKickLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers()?.ToList().Find(lm => lm.m_Address == peerPlayerToKick.m_Address);
                         if (playerToKickLobbyMemberInfo != null)
                         {
                             P2PTransportLayer.Instance.KickLobbyMember(playerToKickLobbyMemberInfo);
@@ -455,7 +532,7 @@ namespace ModManager
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}:{nameof(OnClickKickPlayerButton)}] throws exception:\n{exc.Message}");
+                HandleException(exc, nameof(OnClickKickPlayerButton));
             }
         }
 
@@ -464,26 +541,38 @@ namespace ModManager
             try
             {
                 ShowHUDBigInfo(HUDBigInfoMessage($"Restarting host...", MessageType.Info, Color.green));
-                if (IsHostInCoop)
+                if (IsHostWithPlayersInCoop)
                 {
                     P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
                     SaveGame.SaveCoop();
                     ReloadLobby();
                 }
+                else
+                {
+                    SaveGame.Save();
+                    MainLevel.Instance.Initialize();
+                }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}:{nameof(RestartHost)}] throws exception:\n{exc.Message}");
+              HandleException(exc, nameof(RestartHost));
             }
         }
 
         private void ReloadLobby()
         {
-            ReadOnlyCollection<P2PLobbyMemberInfo> hostedLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers();
-            if (hostedLobbyMemberInfo != null)
+            try
             {
-                P2PSession.Instance.UpdateDefaultRespawnPosition(LocalPlayer.GetWorldPosition());
-                P2PSession.Instance.Restart();
+                ReadOnlyCollection<P2PLobbyMemberInfo> hostedLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers();
+                if (hostedLobbyMemberInfo != null)
+                {
+                    P2PSession.Instance.UpdateDefaultRespawnPosition(LocalPlayer.GetWorldPosition());
+                    P2PSession.Instance.Restart();
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(ReloadLobby));
             }
         }
 
@@ -496,14 +585,21 @@ namespace ModManager
                     ShowHUDBigInfo(MaximumRequestsSendMessage(3));
                     return;
                 }
-                P2PSession.Instance.SendTextChatMessage(GetClientCommandRequestToUseMods());
+                P2PSession.Instance.SendTextChatMessage(GetClientCommandToUseMods());
                 ShowHUDBigInfo(RequestWasSentMessage());
                 RequestsSendToHost++;
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}:{nameof(OnClickRequestModsButton)}] throws exception:\n{exc.Message}");
+                HandleException(exc, nameof(OnClickRequestModsButton));
             }
+        }
+
+        private void HandleException(Exception exc, string methodName)
+        {
+            string info = $"[{ModName}:{methodName}] throws exception:\n{exc.Message}";
+            ModAPI.Log.Write(info);
+            ShowHUDBigInfo(HUDBigInfoMessage(info, MessageType.Error, Color.red));
         }
     }
 }

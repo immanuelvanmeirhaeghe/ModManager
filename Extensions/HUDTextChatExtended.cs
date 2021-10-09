@@ -11,7 +11,7 @@ namespace ModManager
             if (!ModManager.RequestInfoShown)
             {
                 ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));
-                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandRequestToUseMods()));
+                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseMods()));
             }
             base.OnShow();
             ModManager.Disable = true;
@@ -29,7 +29,7 @@ namespace ModManager
 
             if (fieldTextMessage.Length > 0)
             {
-                if (fieldTextMessage == ModManager.GetClientCommandRequestToUseMods())
+                if (fieldTextMessage == ModManager.GetClientCommandToUseMods())
                 {
                     ModManager.SetNewChatRequestId();
                     P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.ChatRequestId)));
