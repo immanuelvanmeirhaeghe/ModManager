@@ -17,7 +17,7 @@ namespace ModManager
     /// <summary>
     /// ModManager is a mod for Green Hell, which aims to be a tool for players
     /// who would like to be able to use ModAPI mods in multiplayer when not being host.
-    /// Press HOME (default) or the key configurable in ModAPI to open the main mod screen.
+    /// Press Alpha0 (default) or the key configurable in ModAPI to open the main mod screen.
     /// </summary>
     public class ModManager : MonoBehaviour
     {
@@ -79,9 +79,9 @@ namespace ModManager
 
         public static string[] GetPlayerNames()
         {
-            string[] playerNames = new string[P2PSession.Instance.m_RemotePeers.Count];
+            string[] playerNames = new string[(int)(P2PSession.Instance.m_RemotePeers?.Count)];
             int playerIdx = 0;
-            var players = P2PSession.Instance.m_RemotePeers.ToList();
+            var players = P2PSession.Instance.m_RemotePeers?.ToList();
             foreach (var peer in players)
             {
                 playerNames[playerIdx] = peer.GetDisplayName();
@@ -210,7 +210,7 @@ namespace ModManager
         }
 
         private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Home;
+        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Alpha0;
         private KeyCode GetConfigurableKey(string buttonId)
         {
             KeyCode configuredKeyCode = default;
@@ -430,8 +430,7 @@ namespace ModManager
                     {
                         GUILayout.Label("Select player grid: ", GUI.skin.label);
                         SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, playerNames, 3, GUI.skin.button);
-                        SelectedPlayerName = playerNames[SelectedPlayerIndex];
-                        if (GUILayout.Button("Kick player", GUI.skin.button, GUILayout.MaxWidth(200)))
+                        if (GUILayout.Button("Kick player", GUI.skin.button))
                         {
                             OnClickKickPlayerButton();
                         }
@@ -514,18 +513,21 @@ namespace ModManager
             try
             {
                 string[] playerNames = GetPlayerNames();
-                SelectedPlayerName = playerNames[SelectedPlayerIndex];
-                if (!string.IsNullOrEmpty(SelectedPlayerName))
+                if (playerNames != null && playerNames.Length > 0)
                 {
-                    P2PPeer peerPlayerToKick = P2PSession.Instance.m_RemotePeers?.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
-                    if (peerPlayerToKick != null)
+                    SelectedPlayerName = playerNames[SelectedPlayerIndex];
+                    if (!string.IsNullOrEmpty(SelectedPlayerName))
                     {
-                        P2PLobbyMemberInfo playerToKickLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers()?.ToList().Find(lm => lm.m_Address == peerPlayerToKick.m_Address);
-                        if (playerToKickLobbyMemberInfo != null)
+                        P2PPeer peerPlayerToKick = P2PSession.Instance.m_RemotePeers?.ToList().Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
+                        if (peerPlayerToKick != null)
                         {
-                            P2PTransportLayer.Instance.KickLobbyMember(playerToKickLobbyMemberInfo);
-                            ShowHUDBigInfo(HUDBigInfoMessage(PlayerWasKickedMessage(SelectedPlayerName), MessageType.Info, Color.green));
-                            P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
+                            P2PLobbyMemberInfo playerToKickLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers()?.ToList().Find(lm => lm.m_Address == peerPlayerToKick.m_Address);
+                            if (playerToKickLobbyMemberInfo != null)
+                            {
+                                P2PTransportLayer.Instance.KickLobbyMember(playerToKickLobbyMemberInfo);
+                                ShowHUDBigInfo(HUDBigInfoMessage(PlayerWasKickedMessage(SelectedPlayerName), MessageType.Info, Color.green));
+                                P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
+                            }
                         }
                     }
                 }

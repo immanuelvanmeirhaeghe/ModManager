@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ModAPI.ModManager")]
-[assembly: AssemblyDescription("ModManager is a mod for Green Hell that aims to be a tool to manage mods in multiplayer.")]
+[assembly: AssemblyDescription("ModManager is a mod for Green Hell, which aims to be a tool for players who would like to be able to use ModAPI mods in multiplayer when not being host. Press Alpha0 (default) or the key configurable in ModAPI to open the main mod screen.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("[Dragon Legion]Immaanuel")]
 [assembly: AssemblyProduct("ModAPI.ModManager")]
