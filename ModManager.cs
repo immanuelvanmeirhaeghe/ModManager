@@ -43,6 +43,8 @@ namespace ModManager
 
         public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         public static GameMode GameModeAtStart;
+        public static string SteamAppId
+            => GreenHellGame.s_SteamAppId.m_AppId.ToString();
         public static string SelectedPlayerName { get; set; } = string.Empty;
         public static int SelectedPlayerIndex { get; set; } = 0;
 
@@ -60,7 +62,7 @@ namespace ModManager
         public static bool IsHostManager
             => ReplTools.AmIMaster();
         public static bool IsHostInCoop
-            => ReplTools.IsCoopEnabled();
+            => IsHostManager && ReplTools.IsCoopEnabled();
         public static bool IsHostWithPlayersInCoop
             => IsHostInCoop && P2PSession.Instance.m_RemotePeers != null && P2PSession.Instance.m_RemotePeers.Count > 0;
         public static bool Disable { get; set; } = false;
@@ -454,6 +456,7 @@ namespace ModManager
 
         private void ScreenMenuBox()
         {
+            GUI.Label(new Rect(ModManagerScreen.width - 60f, 0f, 200f, 20f), SteamAppId, GUI.skin.label);
             if (GUI.Button(new Rect(ModManagerScreen.width - 40f, 0f, 20f, 20f), "-", GUI.skin.button))
             {
                 CollapseWindow();
