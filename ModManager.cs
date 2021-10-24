@@ -456,7 +456,7 @@ namespace ModManager
 
         private void ScreenMenuBox()
         {
-            GUI.Label(new Rect(ModManagerScreen.width - 60f, 0f, 200f, 20f), SteamAppId, GUI.skin.label);
+            GUI.Label(new Rect(ModManagerScreen.width - 260f, 0f, 200f, 20f), SteamAppId, GUI.skin.label);
             if (GUI.Button(new Rect(ModManagerScreen.width - 40f, 0f, 20f, 20f), "-", GUI.skin.button))
             {
                 CollapseWindow();
