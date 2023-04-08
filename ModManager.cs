@@ -51,9 +51,9 @@ namespace ModManager
         public static int PlayerCount => P2PSession.Instance.m_RemotePeers.Count;
 
         public delegate void OnPermissionValueChanged(bool optionValue);
-        public static event OnPermissionValueChanged DoOnPermissionValueChanged;
+        public static event OnPermissionValueChanged onPermissionValueChanged;
         public delegate void OnOptionToggled(bool optionValue, string optionText);
-        public static event OnOptionToggled DoOnOptionToggled;
+        public static event OnOptionToggled onOptionToggled;
 
         public static bool SwitchPlayerVersusMode { get; set; } = false;
         public static bool RequestInfoShown { get; set; } = false;
@@ -266,8 +266,8 @@ namespace ModManager
         private void Start()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
-            DoOnOptionToggled += ModManager_onOptionToggled;
-            DoOnPermissionValueChanged += ModManager_onPermissionValueChanged;
+            onOptionToggled += ModManager_onOptionToggled;
+            onPermissionValueChanged += ModManager_onPermissionValueChanged;
             ModKeybindingId = GetConfigurableKey(nameof(ModKeybindingId));
         }
 
@@ -519,19 +519,19 @@ namespace ModManager
         {
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
             {
-                DoOnOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Using mods and cheats has been");
-                DoOnPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
+                onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Using mods and cheats has been");
+                onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
             }
 
             if (optionName == nameof(RequestInfoShown) && optionState != RequestInfoShown)
             {
-                DoOnOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how mods and cheats can be");
+                onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how mods and cheats can be");
                 RequestsSendToHost = 0;
             }
 
             if (optionName == nameof(SwitchPlayerVersusMode) && optionState != SwitchPlayerVersusMode)
             {
-                DoOnOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
+                onOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
                 if (IsHostWithPlayersInCoop)
                 {
                     foreach (ReplicatedLogicalPlayer s_AllLogicalPlayer in ReplicatedLogicalPlayer.s_AllLogicalPlayers)
