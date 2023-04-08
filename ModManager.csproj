@@ -53,6 +53,9 @@
       <HintPath>../../../modlib/GH/GH_data/Managed/AmplifyMotion.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Green Hell\GH_Data\Managed\com.rlabrecque.steamworks.net.dll</HintPath>
+    </Reference>
     <Reference Include="CursorControl">
       <HintPath>../../../modlib/GH/GH_data/Managed/CursorControl.dll</HintPath>
       <Private>False</Private>

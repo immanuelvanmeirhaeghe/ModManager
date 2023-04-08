@@ -51,10 +51,11 @@ namespace ModManager
         public static int PlayerCount => P2PSession.Instance.m_RemotePeers.Count;
 
         public delegate void OnPermissionValueChanged(bool optionValue);
-        public static event OnPermissionValueChanged onPermissionValueChanged;
+        public static event OnPermissionValueChanged DoOnPermissionValueChanged;
         public delegate void OnOptionToggled(bool optionValue, string optionText);
-        public static event OnOptionToggled onOptionToggled;
+        public static event OnOptionToggled DoOnOptionToggled;
 
+        public static bool SwitchPlayerVersusMode { get; set; } = false;
         public static bool RequestInfoShown { get; set; } = false;
         public static int RequestsSendToHost { get; set; } = 0;
         public static bool AllowModsForMultiplayer { get; set; } = false;
@@ -127,7 +128,7 @@ namespace ModManager
 
         public static string FlagStateChangedMessage(bool flagState, string content, Color? color = null)
             => SystemInfoChatMessage(
-                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{content} { (flagState ? "granted" : "revoked")  }!</color>",
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{content} { (flagState ? "enabled" : "disabled")  }!</color>",
                 color);
 
         public static string OnlyHostCanAllowMessage(Color? color = null)
@@ -237,17 +238,27 @@ namespace ModManager
                     }
                 }
 
-                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Keypad").Replace("Oem", "");
+                if (!string.IsNullOrEmpty(configuredKeybinding))
+                {
+                    configuredKeyCode = EnumUtils<KeyCode>.GetValue(configuredKeybinding);
+                }
+                else
+                {
+                    if (buttonId == nameof(ModKeybindingId))
+                    {
+                        configuredKeyCode = ModKeybindingId;
+                    }
+                }
 
-                configuredKeyCode = (KeyCode)(!string.IsNullOrEmpty(configuredKeybinding)
-                                                            ? Enum.Parse(typeof(KeyCode), configuredKeybinding)
-                                                            : GetType().GetProperty(buttonId)?.GetValue(this));
                 return configuredKeyCode;
             }
             catch (Exception exc)
             {
                 HandleException(exc, nameof(GetConfigurableKey));
-                configuredKeyCode = (KeyCode)(GetType().GetProperty(buttonId)?.GetValue(this));
+                if (buttonId == nameof(ModKeybindingId))
+                {
+                    configuredKeyCode = ModKeybindingId;
+                }
                 return configuredKeyCode;
             }
         }
@@ -255,8 +266,8 @@ namespace ModManager
         private void Start()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
-            onOptionToggled += ModManager_onOptionToggled;
-            onPermissionValueChanged += ModManager_onPermissionValueChanged;
+            DoOnOptionToggled += ModManager_onOptionToggled;
+            DoOnPermissionValueChanged += ModManager_onPermissionValueChanged;
             ModKeybindingId = GetConfigurableKey(nameof(ModKeybindingId));
         }
 
@@ -451,6 +462,7 @@ namespace ModManager
             {
                 AllowModsAndCheatsOption();
                 RequestInfoShownOption();
+                SwitchPlayerVersusModeOption();
             }
         }
 
@@ -496,18 +508,38 @@ namespace ModManager
             ToggleModOption(_requestInfoShownValue, nameof(RequestInfoShown));
         }
 
+        private void SwitchPlayerVersusModeOption()
+        {
+            bool _switchPlayerVersusModeValue = SwitchPlayerVersusMode;
+            SwitchPlayerVersusMode = GUILayout.Toggle(SwitchPlayerVersusMode, "Switch to PvP?", GUI.skin.toggle);
+            ToggleModOption(_switchPlayerVersusModeValue, nameof(SwitchPlayerVersusMode));
+        }
+
         public static void ToggleModOption(bool optionState, string optionName)
         {
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
             {
-                onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Permission to use mods and cheats has been");
-                onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
+                DoOnOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Using mods and cheats has been");
+                DoOnPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
             }
 
             if (optionName == nameof(RequestInfoShown) && optionState != RequestInfoShown)
             {
-                onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how permission can be");
+                DoOnOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how mods and cheats can be");
                 RequestsSendToHost = 0;
+            }
+
+            if (optionName == nameof(SwitchPlayerVersusMode) && optionState != SwitchPlayerVersusMode)
+            {
+                DoOnOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
+                if (IsHostWithPlayersInCoop)
+                {
+                    foreach (ReplicatedLogicalPlayer s_AllLogicalPlayer in ReplicatedLogicalPlayer.s_AllLogicalPlayers)
+                    {
+                        Being playerBeing = s_AllLogicalPlayer.GetComponent<Being>();
+                        
+                    }
+                }
             }
         }
 
@@ -568,6 +600,7 @@ namespace ModManager
         {
             try
             {
+                ShowHUDBigInfo(HUDBigInfoMessage($"Reloading lobby...", MessageType.Info, Color.green));
                 ReadOnlyCollection<P2PLobbyMemberInfo> hostedLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers();
                 if (hostedLobbyMemberInfo != null)
                 {
