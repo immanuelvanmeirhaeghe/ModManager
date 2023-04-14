@@ -27,19 +27,20 @@ namespace ModManager
 
         private static readonly string ModName = nameof(ModManager);
         private static readonly float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenTotalHeight = 300f;
         private static readonly float ModScreenMinWidth = 450f;
-        private static readonly float ModScreenMaxWidth = 500f;
+        private static readonly float ModScreenMaxWidth = 550f;
         private static readonly float ModScreenMinHeight = 50f;
-        private static readonly float ModScreenMaxHeight = 200f;
+        private static readonly float ModScreenMaxHeight = 350f;
 
         public int ModManagerWindowID { get; private set; }
         private static float ModManagerWindowStartPositionX { get; set; } = 0f;
         private static float ModManagerWindowStartPositionY { get; set; } = 0f;
         private static bool IsModManagerWindowMinimized { get; set; } = false;
+
         public int ModManagePlayersWindowID { get; private set; }
         private static float ModManagePlayersWindowStartPositionX { get; set; } = 0f;
-        private static float ModManaggePlayersWindowStartPositionY { get; set; } = 0f;
+        private static float ModManagePlayersWindowStartPositionY { get; set; } = 0f;
         private static bool IsModPlayerListWindowMinimized { get; set; } = false;
 
         private static CursorManager LocalCursorManager;
@@ -51,7 +52,7 @@ namespace ModManager
         private bool ShowPlayerList = false;
 
         public static Rect ModManagerWindow = new Rect(ModManagerWindowStartPositionX, ModManagerWindowStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
-        public static Rect ModManagePlayersWindow = new Rect(ModManagePlayersWindowStartPositionX, ModManaggePlayersWindowStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+        public static Rect ModManagePlayersWindow = new Rect(ModManagePlayersWindowStartPositionX, ModManagePlayersWindowStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
 
         public static GameMode GameModeAtStart;
 
@@ -70,6 +71,14 @@ namespace ModManager
         public static event OnPermissionValueChanged onPermissionValueChanged;
         public delegate void OnOptionToggled(bool optionValue, string optionText);
         public static event OnOptionToggled onOptionToggled;
+
+        public static string ChatRequestId { get; set; } = string.Empty;
+        public static Vector2 PlayerListScrollViewPosition { get; set; }
+        public static string LocalHostDisplayName { get; set; }
+
+        public static Vector2 ModListScrollViewPosition { get; set; }
+        public static int SelectedModIDIndex { get; set; }
+        public static string SelectedModID { get; set; }
 
         public static bool SwitchPlayerVersusMode { get; set; } = false;
         public static bool RequestInfoShown { get; set; } = false;
@@ -108,14 +117,6 @@ namespace ModManager
             }
             return playerNames;
         }
-
-        public static string ChatRequestId { get; private set; } = string.Empty;
-        public Vector2 PlayerListScrollViewPosition { get; private set; }
-        public static string LocalHostDisplayName => P2PSession.Instance.LocalPeer.GetDisplayName();
-
-        public Vector2 ModListScrollViewPosition { get; private set; }
-        public int SelectedModIDIndex { get; private set; }
-        public string SelectedModID { get; private set; }
 
         public static void SetNewChatRequestId()
         {
@@ -248,6 +249,7 @@ namespace ModManager
             List<ConfigurableMod> modList = new List<ConfigurableMod>();
             try
             {
+                ModAPI.Log.Write($"Getting mod list from  {RuntimeConfigurationFile}");
                 if (File.Exists(RuntimeConfigurationFile))
                 {
                     using (XmlReader configFileReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
@@ -282,6 +284,7 @@ namespace ModManager
                         }
                     }
                 }
+                ModAPI.Log.Write($"Mod list retrieved.");
                 return modList;
             }
             catch (Exception exc)
@@ -327,7 +330,7 @@ namespace ModManager
                     InitData();
                     EnableCursor(blockPlayer: true);
                 }
-                ToggleShowUI();
+                ToggleShowUI(ModManagerWindowID);
                 if (!ShowUI)
                 {
                     EnableCursor(blockPlayer: false);
@@ -335,9 +338,16 @@ namespace ModManager
             }
         }
 
-        private void ToggleShowUI()
+        private void ToggleShowUI(int windowID)
         {
-            ShowUI = !ShowUI;
+            if (windowID == ModManagerWindowID)
+            {
+                ShowUI = !ShowUI;
+            }
+            if (windowID == ModManagePlayersWindowID)
+            {
+                ShowPlayerList = !ShowPlayerList;
+            }
         }
 
         private void OnGUI()
@@ -355,7 +365,7 @@ namespace ModManager
             if (ShowUI)
             {
                 ModManagerWindow = GUILayout.Window(
-                                                GetHashCode(),
+                                               GetHashCode(),
                                                 ModManagerWindow,
                                                 InitModManagerScreen,
                                                 ModName,
@@ -370,7 +380,8 @@ namespace ModManager
 
             if (ShowPlayerList)
             {
-                ModManagePlayersWindow = GUILayout.Window(GetHashCode(),
+                ModManagePlayersWindow = GUILayout.Window(
+                                                                                                    GetHashCode(),       
                                                                                                     ModManagePlayersWindow,
                                                                                                     InitModManagePlayersWindow,
                                                                                                     " Player List",
@@ -414,11 +425,11 @@ namespace ModManager
         {
             ModManagePlayersWindowID = windowID;
             ModManagePlayersWindowStartPositionX = ModManagePlayersWindow.x;
-            ModManaggePlayersWindowStartPositionY = ModManagePlayersWindow.y;
+            ModManagePlayersWindowStartPositionY = ModManagePlayersWindow.y;
 
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                ScreenMenuBox(ModManagePlayersWindow, windowID);
+                ScreenMenuBox(ModManagePlayersWindow, ModManagePlayersWindowID);
                 if (!IsModPlayerListWindowMinimized)
                 {
                     ManagePlayersScrollViewBox();
@@ -503,7 +514,7 @@ namespace ModManager
 
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                ScreenMenuBox(ModManagerWindow, windowID);
+                ScreenMenuBox(ModManagerWindow, ModManagerWindowID);
                 if (!IsModManagerWindowMinimized)
                 {
                     if (IsHostManager)
@@ -525,28 +536,15 @@ namespace ModManager
         {
             GUI.color = DefaultGuiColor;
             using (var managemodlistScope = new GUILayout.VerticalScope(GUI.skin.box))
-            {
-                GUILayout.Label($"Mod list: ", GUI.skin.label);
-             
-                ModListScrollView();
-                //using (var actionScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                //{
-                //    if (GUILayout.Button("Kick", GUI.skin.button))
-                //    {
-                //        OnClickKickPlayerButton();
-                //    }
-                //    if (GUILayout.Button("Send message", GUI.skin.button))
-                //    {
-                //        OnClickSendMessageButton();
-                //    }
-                //}
+            {       
+                ModListScrollView();           
             }
         }
 
         private void ModListScrollView()
         {
             GUILayout.Label($"All loaded mods from ModAPI as found in runtime configuration file:", GUI.skin.label);
-            ModListScrollViewPosition = GUILayout.BeginScrollView(ModListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(300f));            
+            ModListScrollViewPosition = GUILayout.BeginScrollView(ModListScrollViewPosition, GUI.skin.scrollView, GUILayout.MaxHeight(150f));            
             if (ModList != null)
             {
                 string[] modlistNames = GetModListNames();
@@ -558,14 +556,14 @@ namespace ModManager
 
         public static string[] GetModListNames()
         {
-            string[] names = new string[ModList.Count];
+            string[] modListNames = new string[ModList.Count];
             int modIDIdx = 0;          
             foreach (var configuredMod in ModList)
             {
-                names[modIDIdx] = configuredMod.ID;
+                modListNames[modIDIdx] = configuredMod.ID;
                 modIDIdx++;
             }
-            return names;
+            return modListNames;
         }
 
         private void ClientManagerBox()
@@ -691,12 +689,12 @@ namespace ModManager
             {
                 if (!IsModPlayerListWindowMinimized)
                 {
-                    ModManagePlayersWindow = new Rect(ModManagePlayersWindowStartPositionX, ModManaggePlayersWindowStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
+                    ModManagePlayersWindow = new Rect(ModManagePlayersWindowStartPositionX, ModManagePlayersWindowStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
                     IsModPlayerListWindowMinimized = true;
                 }
                 else
                 {
-                    ModManagePlayersWindow = new Rect(ModManagePlayersWindowStartPositionX, ModManaggePlayersWindowStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+                    ModManagePlayersWindow = new Rect(ModManagePlayersWindowStartPositionX, ModManagePlayersWindowStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
                     IsModPlayerListWindowMinimized = false;
                 }
             }
@@ -763,6 +761,7 @@ namespace ModManager
         {
             try
             {
+                LocalHostDisplayName = GetHostPlayerName();
                 string[] playerNames = GetPlayerNames();
                 if (playerNames != null && playerNames.Length > 0)
                 {
