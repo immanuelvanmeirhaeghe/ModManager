@@ -249,7 +249,7 @@ namespace ModManager
             List<ConfigurableMod> modList = new List<ConfigurableMod>();
             try
             {
-                ModAPI.Log.Write($"Getting mod list from  {RuntimeConfigurationFile}");
+                ModAPI.Log.Write($"Getting mod list");
                 if (File.Exists(RuntimeConfigurationFile))
                 {
                     using (XmlReader configFileReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
@@ -257,24 +257,16 @@ namespace ModManager
                         while (configFileReader.Read())
                         {
                             configFileReader.ReadToDescendant("Mod");
-
-                            configFileReader.MoveToAttribute("ID");
-                            string modID = (string) configFileReader.ReadContentAs(typeof(string), null);
-
-                            configFileReader.MoveToAttribute("UniqueID");
-                            string uniqueID = (string)configFileReader.ReadContentAs(typeof(string), null);
-
-                            configFileReader.MoveToAttribute("Version");
-                            string version = (string)configFileReader.ReadContentAs(typeof(string), null);
+                            string modID = configFileReader.GetAttribute("ID");
+                            string uniqueID = configFileReader.GetAttribute("UniqueID");
+                            string version = configFileReader.GetAttribute("Version");
 
                             var configurableMod = new ConfigurableMod("GH", modID, uniqueID, version);
 
                             while (configFileReader.ReadToFollowing("Button"))
-                            {
-                                configFileReader.MoveToAttribute("ID");
-                                string buttonID = (string)configFileReader.ReadContentAs(typeof(string), null);
+                            {                              
+                                string buttonID = configFileReader.GetAttribute("ID");
                                 string buttonKeybinding = configFileReader.ReadElementContentAsString();
-
                                 configurableMod.AddConfigurableModButton(buttonID, buttonKeybinding);
                             }
                             if (!modList.Contains(configurableMod))
@@ -284,7 +276,7 @@ namespace ModManager
                         }
                     }
                 }
-                ModAPI.Log.Write($"Mod list retrieved.");
+                ModAPI.Log.Write($"Mod list ok.");
                 return modList;
             }
             catch (Exception exc)
@@ -330,7 +322,7 @@ namespace ModManager
                     InitData();
                     EnableCursor(blockPlayer: true);
                 }
-                ToggleShowUI(ModManagerWindowID);
+                ToggleShowUI(1);
                 if (!ShowUI)
                 {
                     EnableCursor(blockPlayer: false);
@@ -340,11 +332,11 @@ namespace ModManager
 
         private void ToggleShowUI(int windowID)
         {
-            if (windowID == ModManagerWindowID)
+            if (windowID == 1 || windowID == ModManagerWindowID)
             {
                 ShowUI = !ShowUI;
             }
-            if (windowID == ModManagePlayersWindowID)
+            if (windowID == 2 || windowID== ModManagePlayersWindowID)
             {
                 ShowPlayerList = !ShowPlayerList;
             }
@@ -556,14 +548,23 @@ namespace ModManager
 
         public static string[] GetModListNames()
         {
-            string[] modListNames = new string[ModList.Count];
-            int modIDIdx = 0;          
-            foreach (var configuredMod in ModList)
+            if (ModList != null && ModList.Count > 0)
             {
-                modListNames[modIDIdx] = configuredMod.ID;
-                modIDIdx++;
+                string[] modListNames = new string[ModList.Count];
+                int modIDIdx = 0;
+                foreach (var configuredMod in ModList)
+                {
+                    modListNames[modIDIdx] = configuredMod.ID;
+                    modIDIdx++;
+                }
+                return modListNames;
             }
-            return modListNames;
+            else 
+            {
+                string[] modListNames = new string[1];
+                modListNames[0] = ModName;
+                return modListNames;
+            } 
         }
 
         private void ClientManagerBox()
