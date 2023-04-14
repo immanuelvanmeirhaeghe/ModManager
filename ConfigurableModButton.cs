@@ -12,11 +12,11 @@ namespace ModManager
         /// <summary>
         /// xml node Button, text content
         /// </summary>
-        public string Keybinding { get; set; } = string.Empty;
+        public string KeyBinding { get; set; } = string.Empty;
 
         /// <summary>
         /// The input key bound to the mod
-        /// based on <see cref="Keybinding"/>
+        /// based on <see cref="KeyBinding"/>
         /// </summary>
         public KeyCode KeyCode { get; set; } = KeyCode.None;
 
@@ -31,7 +31,7 @@ namespace ModManager
         public ConfigurableModButton(string buttonId, string keyBinding, string description = "")
         {
             ID = buttonId;
-            Keybinding = keyBinding;
+            KeyBinding = keyBinding;
             KeyCode = GetKeyCode(keyBinding);
             Description = description;
         }
