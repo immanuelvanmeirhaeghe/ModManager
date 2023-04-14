@@ -257,20 +257,20 @@ namespace ModManager
                             configFileReader.ReadToDescendant("Mod");
 
                             configFileReader.MoveToAttribute("ID");
-                            string modID = configFileReader.ReadContentAsString();
+                            string modID = (string) configFileReader.ReadContentAs(typeof(string), null);
 
                             configFileReader.MoveToAttribute("UniqueID");
-                            string uniqueID = configFileReader.ReadContentAsString();
+                            string uniqueID = (string)configFileReader.ReadContentAs(typeof(string), null);
 
                             configFileReader.MoveToAttribute("Version");
-                            string version = configFileReader.ReadContentAsString();
+                            string version = (string)configFileReader.ReadContentAs(typeof(string), null);
 
                             var configurableMod = new ConfigurableMod("GH", modID, uniqueID, version);
 
                             while (configFileReader.ReadToFollowing("Button"))
                             {
                                 configFileReader.MoveToAttribute("ID");
-                                string buttonID = configFileReader.ReadContentAsString();
+                                string buttonID = (string)configFileReader.ReadContentAs(typeof(string), null);
                                 string buttonKeybinding = configFileReader.ReadElementContentAsString();
 
                                 configurableMod.AddConfigurableModButton(buttonID, buttonKeybinding);
