@@ -243,7 +243,7 @@ namespace ModManager
                     {
                         while (configFileReader.Read())
                         {
-                            while (configFileReader.ReadToFollowing("Mod"))
+                            if (configFileReader.ReadToFollowing("Mod"))
                             {
                                 string gameID = "GH";
                                 string modID = configFileReader.GetAttribute("ID");
@@ -522,11 +522,7 @@ namespace ModManager
                     {
                         ClientManagerBox();
                     }
-                    ManageModListBox();
-                    if (SelectedMod != null)
-                    {
-                        ModInfoBox();
-                    }
+                    ManageModListBox();                   
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -536,8 +532,13 @@ namespace ModManager
         {
             GUI.color = DefaultGuiColor;
             using (var managemodlistScope = new GUILayout.VerticalScope(GUI.skin.box))
-            {       
+            {
+                GUILayout.Label($"Mods currently available from ModAPI as found in runtime configuration file:", GUI.skin.label);
                 ModListScrollView();
+                if (SelectedMod != null)
+                {
+                    ModInfoBox();
+                }
                 using (var actionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     if (GUILayout.Button("Info...", GUI.skin.button))
@@ -573,7 +574,7 @@ namespace ModManager
                 foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                 {
                     GUILayout.Label($"Button {nameof(ConfigurableModButton.ID)}: {configurableModButton.ID}", GUI.skin.label);
-                    GUILayout.Label($"Key binding {nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
+                    GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
                 }               
             }
             GUI.color = DefaultGuiColor;
@@ -581,13 +582,17 @@ namespace ModManager
 
         private void ModListScrollView()
         {
-            GUILayout.Label($"All loaded mods from ModAPI as found in runtime configuration file:", GUI.skin.label);
             ModListScrollViewPosition = GUILayout.BeginScrollView(ModListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
             string[] modlistNames = GetModListNames();
             if (modlistNames != null)
-            {              
+            {
+                int _selected = SelectedModIDIndex;
                 SelectedModIDIndex = GUILayout.SelectionGrid(SelectedModIDIndex, modlistNames, 3, GUI.skin.button);
                 SelectedModID = modlistNames[SelectedModIDIndex];
+                if (_selected != SelectedModIDIndex)
+                {
+                    SelectedMod = null;
+                }
             }
             GUILayout.EndScrollView();
         }
@@ -664,7 +669,7 @@ namespace ModManager
                 GUILayout.Label("Host Manager: ", GUI.skin.label);
                 ModOptionsBox();
                 PlayerListBox();
-                HostServerBox();
+                //HostServerBox();
             }
         }
 
@@ -726,9 +731,9 @@ namespace ModManager
                 GUILayout.Label("Current game session info: ", GUI.skin.label);
                 GUI.color = Color.cyan;
                 GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.DEBUG)} is {(GreenHellGame.DEBUG ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"{nameof(GameMode)} at start: {GameModeAtStart}", GUI.skin.label);
-                GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.Instance)}.{nameof(GreenHellGame.Instance.m_GHGameMode)}: {GreenHellGame.Instance.m_GHGameMode}", GUI.skin.label);                
-                GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_GameMode)}: {MainLevel.Instance.m_GameMode}", GUI.skin.label);
+                //GUILayout.Label($"{nameof(GameMode)} at start: {GameModeAtStart}", GUI.skin.label);
+                //GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.Instance)}.{nameof(GreenHellGame.Instance.m_GHGameMode)}: {GreenHellGame.Instance.m_GHGameMode}", GUI.skin.label);                
+                //GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_GameMode)}: {MainLevel.Instance.m_GameMode}", GUI.skin.label);
                 GUILayout.Label($"Mods for singleplayer are {(IsModActiveForSingleplayer ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"Mods for multiplayer are {(IsModActiveForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"Remote player count: {PlayerCount}", GUI.skin.label);
