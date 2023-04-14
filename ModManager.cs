@@ -3,6 +3,7 @@
  * */
 using Enums;
 using ModManager.Enums;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -104,19 +105,6 @@ namespace ModManager
 
         public static string GetHostPlayerName()
             => P2PSession.Instance.GetSessionMaster().GetDisplayName();
-
-        public static string[] GetPlayerNames()
-        {
-            string[] playerNames = new string[(int)(P2PSession.Instance.m_RemotePeers?.Count)];
-            int playerIdx = 0;
-            var players = P2PSession.Instance.m_RemotePeers?.ToList();
-            foreach (var peer in players)
-            {
-                playerNames[playerIdx] = peer.GetDisplayName();
-                playerIdx++;
-            }
-            return playerNames;
-        }
 
         public static void SetNewChatRequestId()
         {
@@ -248,8 +236,7 @@ namespace ModManager
         {
             List<ConfigurableMod> modList = new List<ConfigurableMod>();
             try
-            {
-                ModAPI.Log.Write($"Getting mod list");
+            {              
                 if (File.Exists(RuntimeConfigurationFile))
                 {
                     using (XmlReader configFileReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
@@ -275,8 +262,7 @@ namespace ModManager
                             }
                         }
                     }
-                }
-                ModAPI.Log.Write($"Mod list ok.");
+                }                
                 return modList;
             }
             catch (Exception exc)
@@ -565,6 +551,28 @@ namespace ModManager
                 modListNames[0] = ModName;
                 return modListNames;
             } 
+        }
+
+        public static string[] GetPlayerNames()
+        {
+            if (ReplTools.IsCoopEnabled())
+            {
+                string[] playerNames = new string[(P2PSession.Instance.GetRemotePeerCount())];
+                int playerIdx = 0;
+                var players = P2PSession.Instance.m_RemotePeers?.ToList();
+                foreach (var peer in players)
+                {
+                    playerNames[playerIdx] = peer.GetDisplayName();
+                    playerIdx++;
+                }
+                return playerNames;
+            }
+            else
+            {
+                string[] playerNames = new string[1];
+                playerNames[0] = GetHostPlayerName();
+                return playerNames;
+            }
         }
 
         private void ClientManagerBox()
