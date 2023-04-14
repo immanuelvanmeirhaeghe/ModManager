@@ -43,6 +43,7 @@ namespace ModManager
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
         private static SteamManager LocalSteamManager;
+        private static MainMenuManager LocalMainMenuManager;
 
         private Color DefaultGuiColor = GUI.color;
         private bool ShowUI = false;
@@ -177,7 +178,7 @@ namespace ModManager
             return Instance;
         }
 
-        public void ShowHUDBigInfo(string text)
+        public static void ShowHUDBigInfo(string text)
         {
             string header = $"{ModName} Info";
             string textureName = HUDInfoLogTextureType.Count.ToString();
@@ -221,9 +222,7 @@ namespace ModManager
 
         private void Start()
         {
-            GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
-            ModAPI.Log.Write($"{nameof(GameModeAtStart)} = {GameModeAtStart}");
-
+            GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;          
             onOptionToggled += ModManager_onOptionToggled;
             onPermissionValueChanged += ModManager_onPermissionValueChanged;
 
@@ -234,6 +233,7 @@ namespace ModManager
 
         private List<ConfigurableMod> GetModList()
         {
+            ModAPI.Log.Write($"{ModName}:{nameof(GetModList)}");
             List<ConfigurableMod> modList = new List<ConfigurableMod>();
             try
             {
@@ -243,32 +243,33 @@ namespace ModManager
                     {
                         while (configFileReader.Read())
                         {
-                            configFileReader.ReadToDescendant("Mod");
-                            string gameID = "GH";
-                            string modID = configFileReader.GetAttribute("ID");
-                            string uniqueID = configFileReader.GetAttribute("UniqueID");
-                            string version = configFileReader.GetAttribute("Version");
-
-                            ModAPI.Log.Write($"{nameof(gameID)} = {gameID}");
-                            ModAPI.Log.Write($"{nameof(modID)} = {modID}");
-                            ModAPI.Log.Write($"{nameof(uniqueID)} = {uniqueID}");
-                            ModAPI.Log.Write($"{nameof(version)} = {version}");
-
-                            var configurableMod = new ConfigurableMod(gameID, modID, uniqueID, version);
-
-                            while (configFileReader.ReadToFollowing("Button"))
-                            {                              
-                                string buttonID = configFileReader.GetAttribute("ID");
-                                string buttonKeyBinding = configFileReader.ReadElementContentAsString();
-                                
-                                ModAPI.Log.Write($"{nameof(buttonID)} = {buttonID}");
-                                ModAPI.Log.Write($"{nameof(buttonKeyBinding)} = {buttonKeyBinding}");
-
-                                configurableMod.AddConfigurableModButton(buttonID, buttonKeyBinding);
-                            }
-                            if (!modList.Contains(configurableMod))
+                            while (configFileReader.ReadToFollowing("Mod"))
                             {
-                                modList.Add(configurableMod);
+                                string gameID = "GH";
+                                string modID = configFileReader.GetAttribute("ID");
+                                string uniqueID = configFileReader.GetAttribute("UniqueID");
+                                string version = configFileReader.GetAttribute("Version");
+
+                                ModAPI.Log.Write($"{nameof(gameID)} = {gameID}");
+                                ModAPI.Log.Write($"{nameof(modID)} = {modID}");
+                                ModAPI.Log.Write($"{nameof(uniqueID)} = {uniqueID}");
+                                ModAPI.Log.Write($"{nameof(version)} = {version}");
+
+                                var configurableMod = new ConfigurableMod(gameID, modID, uniqueID, version);
+                                while (configFileReader.ReadToDescendant("Button"))
+                                {
+                                    string buttonID = configFileReader.GetAttribute("ID");
+                                    string buttonKeyBinding = configFileReader.ReadElementContentAsString();
+
+                                    ModAPI.Log.Write($"{nameof(buttonID)} = {buttonID}");
+                                    ModAPI.Log.Write($"{nameof(buttonKeyBinding)} = {buttonKeyBinding}");
+
+                                    configurableMod.AddConfigurableModButton(buttonID, buttonKeyBinding);
+                                }
+                                if (!modList.Contains(configurableMod))
+                                {
+                                    modList.Add(configurableMod);
+                                }
                             }
                         }
                     }
@@ -304,7 +305,7 @@ namespace ModManager
             ShowHUDBigInfo(
                 FlagStateChangedMessage(optionValue, optionText));
 
-            if (IsHostWithPlayersInCoop && P2PSession.Instance.GetRemotePeerCount() > 0)
+            if (IsHostWithPlayersInCoop && PlayerCount > 0)
             {
                 P2PSession.Instance.SendTextChatMessage(FlagStateChangedMessage(optionValue, optionText));
             }
@@ -393,6 +394,7 @@ namespace ModManager
             LocalPlayer = Player.Get();
             LocalCursorManager = CursorManager.Get();
             LocalSteamManager = GreenHellGame.Instance.m_SteamManager;
+            LocalMainMenuManager = MainMenuManager.Get();
         }
 
         private static void InitSkinUI()
@@ -686,7 +688,7 @@ namespace ModManager
                 if (GUILayout.Button("Restart", GUI.skin.button))
                 {
                     ShowHUDBigInfo(SystemInfoServerRestartMessage());
-                    RestartHost();
+                    SaveGameOnSwitch();
                 }
             }
         }
@@ -726,9 +728,9 @@ namespace ModManager
                 GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.DEBUG)} is {(GreenHellGame.DEBUG ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"{nameof(GameMode)} at start: {GameModeAtStart}", GUI.skin.label);
                 GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.Instance)}.{nameof(GreenHellGame.Instance.m_GHGameMode)}: {GreenHellGame.Instance.m_GHGameMode}", GUI.skin.label);                
-                GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_GameMode)}: {MainLevel.Instance.m_GameMode}", GUI.skin.label); 
-                
-                GUILayout.Label($"Mods and cheats for multiplayer are {(IsModActiveForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
+                GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_GameMode)}: {MainLevel.Instance.m_GameMode}", GUI.skin.label);
+                GUILayout.Label($"Mods for singleplayer are {(IsModActiveForSingleplayer ? "enabled" : "disabled")}", GUI.skin.label);
+                GUILayout.Label($"Mods for multiplayer are {(IsModActiveForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"Remote player count: {PlayerCount}", GUI.skin.label);
                 GUI.color = DefaultGuiColor;
                 MultiplayerInfoBox();
@@ -749,8 +751,7 @@ namespace ModManager
                 GUI.color = Color.cyan;                
                 GUILayout.Label($"Host player name: {LocalHostDisplayName}", GUI.skin.label);
                 GUILayout.Label($"Host is playing with {ModName} { (IsHostManager ? "activated" : "disabled"  )}", GUI.skin.label);
-                GUILayout.Label($"Host is {(IsHostWithPlayersInCoop ? "playing in coop" : "not playing in coop")}", GUI.skin.label);
-                GUILayout.Label($"Mods and cheats for multiplayer are {(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
+                GUILayout.Label($"Host is {(IsHostWithPlayersInCoop ? "playing in coop" : "not playing in coop")}", GUI.skin.label);             
                 GUILayout.Label($"Client player name: {GetClientPlayerName()}", GUI.skin.label);
                 GUILayout.Label($"Command to unlock mods: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
             }
@@ -821,15 +822,27 @@ namespace ModManager
 
             if (optionName == nameof(SwitchPlayerVersusMode) && optionState != SwitchPlayerVersusMode)
             {
+                SaveGameOnSwitch();
                 onOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
-                if (SwitchPlayerVersusMode)
-                {
-                    
-                }
-                else
-                {
-                
-                }
+                LoadMainMenu();
+            }
+        }
+
+        private static void LoadMainMenu()
+        {
+            if (SwitchPlayerVersusMode)
+            {
+                MainMenuChooseMode.s_DisplayMode = MainMenuChooseMode.MainMenuChooseModeType.Multiplayer;
+                LocalMainMenuManager.SetActiveScreen(typeof(MainMenuChooseMode));
+                var choose = (MainMenuChooseMode)LocalMainMenuManager.GetScreen(typeof(MainMenuChooseMode));
+                choose.Show();
+            }
+            else
+            {
+                MainMenuChooseMode.s_DisplayMode = MainMenuChooseMode.MainMenuChooseModeType.Singleplayer;
+                LocalMainMenuManager.SetActiveScreen(typeof(MainMenuChooseMode));
+                var choose = (MainMenuChooseMode)LocalMainMenuManager.GetScreen(typeof(MainMenuChooseMode));
+                choose.Show();
             }
         }
 
@@ -862,30 +875,28 @@ namespace ModManager
             }
         }
 
-        private void RestartHost()
+        private static void SaveGameOnSwitch()
         {
             try
             {
-                ShowHUDBigInfo(HUDBigInfoMessage($"Restarting host...", MessageType.Info, Color.green));
+                ShowHUDBigInfo(HUDBigInfoMessage($"Saving..", MessageType.Info, Color.green));
                 if (IsHostWithPlayersInCoop && ReplTools.CanSaveInCoop())
                 {
                     P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
-                    SaveGame.SaveCoop();
-                    //ReloadLobby();
+                    SaveGame.SaveCoop();                  
                 }
                 if (!IsHostWithPlayersInCoop)
                 {
-                    SaveGame.Save();
-                    //MainLevel.Instance.Initialize();
+                    SaveGame.Save();                    
                 }
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(RestartHost));
+                HandleException(exc, nameof(SaveGameOnSwitch));
             }
         }
 
-        private void ReloadLobby()
+        private static void ReloadLobby()
         {
             try
             {
