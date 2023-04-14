@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Reflection;
+using UnityEngine;
 
 namespace ModManager
 {
@@ -43,20 +44,31 @@ namespace ModManager
         /// <returns></returns>
         public static KeyCode GetKeyCode(string keyBinding)
         {
-            if (!string.IsNullOrEmpty(keyBinding))
+            try
             {
-                keyBinding = keyBinding.Trim();
-                if (keyBinding.StartsWith('D'))
+                if (!string.IsNullOrEmpty(keyBinding))
                 {
-                    keyBinding = keyBinding.Replace("D", "Alpha");
+                    keyBinding = keyBinding.Trim();
+                    if (keyBinding.StartsWith('D'))
+                    {
+                        keyBinding = keyBinding.Replace("D", "Alpha");
+                    }
+                    else
+                    {
+                        keyBinding = keyBinding.Replace("Subtract", "KeypadMinus");
+                        keyBinding = keyBinding.Replace("NumPad", "Keypad").Replace("Oem", string.Empty);
+                    }
+                    return EnumUtils<KeyCode>.GetValue(keyBinding);
                 }
-                else
-                {
-                    keyBinding = keyBinding.Replace("NumPad", "Keypad").Replace("Oem", string.Empty);
-                }
-                return EnumUtils<KeyCode>.GetValue(keyBinding);
+                return KeyCode.None;
             }
-            return KeyCode.None;
+            catch (System.Exception ex)
+            {
+                string info = $"[{nameof(ConfigurableModButton)}:{nameof(GetKeyCode)}] throws exception:\n{ex.Message}";
+                ModAPI.Log.Write(info);
+                Debug.Log(info);
+                return KeyCode.None;              
+            }
         }
 
     }

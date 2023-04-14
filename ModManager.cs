@@ -3,6 +3,7 @@
  * */
 using Enums;
 using ModManager.Enums;
+using RootMotion.FinalIK;
 using Steamworks;
 using System;
 using System.Collections.Generic;
@@ -40,6 +41,7 @@ namespace ModManager
         private static CursorManager LocalCursorManager;
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
+        private static SteamManager LocalSteamManager;
 
         private Color DefaultGuiColor = GUI.color;
         private bool ShowUI = false;
@@ -177,7 +179,7 @@ namespace ModManager
             string textureName = HUDInfoLogTextureType.Count.ToString();
 
             HUDBigInfo bigInfo = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
-            HUDBigInfoData.s_Duration = 6f;
+            HUDBigInfoData.s_Duration = 3f;
             HUDBigInfoData bigInfoData = new HUDBigInfoData
             {
                 m_Header = header,
@@ -338,8 +340,8 @@ namespace ModManager
                 ModManagerWindow = GUILayout.Window(
                                                GetHashCode(),
                                                 ModManagerWindow,
-                                                InitModManagerScreen,
-                                                ModName,
+                InitModManagerScreen,
+                                                $"{ModName} by [Dragon Legion] Immaanuel#4300",
                                                 GUI.skin.window,
                                                 GUILayout.ExpandWidth(true),
                                                 GUILayout.MinWidth(ModScreenMinWidth),
@@ -371,6 +373,7 @@ namespace ModManager
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
             LocalCursorManager = CursorManager.Get();
+            LocalSteamManager = GreenHellGame.Instance.m_SteamManager;
         }
 
         private static void InitSkinUI()
