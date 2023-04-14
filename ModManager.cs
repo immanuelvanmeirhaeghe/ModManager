@@ -243,20 +243,23 @@ namespace ModManager
                     {
                         while (configFileReader.Read())
                         {
-                            if (configFileReader.ReadToFollowing("Mod"))
+                            configFileReader.ReadToFollowing("Mod");
+                            do
                             {
                                 string gameID = "GH";
                                 string modID = configFileReader.GetAttribute("ID");
                                 string uniqueID = configFileReader.GetAttribute("UniqueID");
                                 string version = configFileReader.GetAttribute("Version");
 
-                                ModAPI.Log.Write($"{nameof(gameID)} = {gameID}");
-                                ModAPI.Log.Write($"{nameof(modID)} = {modID}");
-                                ModAPI.Log.Write($"{nameof(uniqueID)} = {uniqueID}");
-                                ModAPI.Log.Write($"{nameof(version)} = {version}");
+                                ModAPI.Log.Write($"{nameof(ConfigurableMod.GameID)} = {gameID}");
+                                ModAPI.Log.Write($"{nameof(ConfigurableMod.ID)} = {modID}");
+                                ModAPI.Log.Write($"{nameof(ConfigurableMod.UniqueID)} = {uniqueID}");
+                                ModAPI.Log.Write($"{nameof(ConfigurableMod.Version)} = {version}");
 
                                 var configurableMod = new ConfigurableMod(gameID, modID, uniqueID, version);
-                                while (configFileReader.ReadToDescendant("Button"))
+
+                                configFileReader.ReadToDescendant("Button");
+                                do
                                 {
                                     string buttonID = configFileReader.GetAttribute("ID");
                                     string buttonKeyBinding = configFileReader.ReadElementContentAsString();
@@ -265,12 +268,15 @@ namespace ModManager
                                     ModAPI.Log.Write($"{nameof(buttonKeyBinding)} = {buttonKeyBinding}");
 
                                     configurableMod.AddConfigurableModButton(buttonID, buttonKeyBinding);
-                                }
+
+                                } while (configFileReader.ReadToNextSibling("Button"));
+
                                 if (!modList.Contains(configurableMod))
                                 {
                                     modList.Add(configurableMod);
                                 }
-                            }
+
+                            } while (configFileReader.ReadToNextSibling("Mod"));
                         }
                     }
                 }                
@@ -533,28 +539,28 @@ namespace ModManager
             using (var managemodlistScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUILayout.Label($"Mods currently available from ModAPI as found in runtime configuration file:", GUI.skin.label);
-                ModListScrollView();
-                if (SelectedMod != null)
-                {
-                    ModInfoBox();
-                }
+                ModListScrollView();               
                 using (var actionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
+                    if (SelectedMod != null)
+                    {
+                        ModInfoBox();
+                    }
                     if (GUILayout.Button("Info...", GUI.skin.button))
                     {
                         OnClickModInfoButton();
                     }
-                }
+                }               
             }
         }
 
         private void OnClickModInfoButton()
         {
             string[] modlistNames = GetModListNames();
-            if (modlistNames != null && SelectedModIDIndex > 0)
+            if (modlistNames != null)
             {
                 SelectedModID = modlistNames[SelectedModIDIndex];
-                SelectedMod = ModList.Find(cfgMod => cfgMod.ID == ModName);
+                SelectedMod = ModList.Find(cfgMod => cfgMod.ID == SelectedModID);              
             } 
         }
 
@@ -585,10 +591,10 @@ namespace ModManager
             string[] modlistNames = GetModListNames();
             if (modlistNames != null)
             {
-                int _selected = SelectedModIDIndex;
+                int _SelectedModIDIndex = SelectedModIDIndex;
                 SelectedModIDIndex = GUILayout.SelectionGrid(SelectedModIDIndex, modlistNames, 3, GUI.skin.button);
                 SelectedModID = modlistNames[SelectedModIDIndex];
-                if (_selected != SelectedModIDIndex)
+                if (_SelectedModIDIndex != SelectedModIDIndex)
                 {
                     SelectedMod = null;
                 }
