@@ -15,7 +15,7 @@ namespace ModManager
         /// <summary>
         /// The game for which the mod was created.
         /// </summary>
-        public string GameId { get; set; } = string.Empty;
+        public string GameID { get; set; } = string.Empty;
 
         /// <summary>
         /// xml node Mod, attribute ID
@@ -45,7 +45,7 @@ namespace ModManager
         public ConfigurableMod(string gameId, string id, string uniqueID, string version)
             : this()
         {
-            GameId = gameId;
+            GameID = gameId;
             ID = id;
             UniqueID = uniqueID;
             Version = version;

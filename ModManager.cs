@@ -70,7 +70,7 @@ namespace ModManager
         public static Vector2 ModListScrollViewPosition { get; set; }
         public static int SelectedModIDIndex { get; set; }
         public static string SelectedModID { get; set; }
-
+        public static ConfigurableMod SelectedMod { get; set; }
         public static bool SwitchPlayerVersusMode { get; set; } = false;
         public static bool RequestInfoShown { get; set; } = false;
         public static int RequestsSendToHost { get; set; } = 0;
@@ -243,8 +243,8 @@ namespace ModManager
                             while (configFileReader.ReadToFollowing("Button"))
                             {                              
                                 string buttonID = configFileReader.GetAttribute("ID");
-                                string buttonKeybinding = configFileReader.ReadElementContentAsString();
-                                configurableMod.AddConfigurableModButton(buttonID, buttonKeybinding);
+                                string buttonKeyBinding = configFileReader.ReadElementContentAsString();
+                                configurableMod.AddConfigurableModButton(buttonID, buttonKeyBinding);
                             }
                             if (!modList.Contains(configurableMod))
                             {
@@ -499,6 +499,10 @@ namespace ModManager
                         ClientManagerBox();
                     }
                     ManageModListBox();
+                    if (SelectedMod != null)
+                    {
+                        ModInfoBox();
+                    }
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -509,8 +513,45 @@ namespace ModManager
             GUI.color = DefaultGuiColor;
             using (var managemodlistScope = new GUILayout.VerticalScope(GUI.skin.box))
             {       
-                ModListScrollView();        
+                ModListScrollView();
+                using (var actionScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    if (GUILayout.Button("Info...", GUI.skin.button))
+                    {
+                        OnClickModInfoButton();
+                    }
+                }
             }
+        }
+
+        private void OnClickModInfoButton()
+        {
+            string[] modlistNames = GetModListNames();
+            if (modlistNames != null && SelectedModIDIndex > 0)
+            {
+                SelectedModID = modlistNames[SelectedModIDIndex];
+                SelectedMod = ModList.Find(cfgMod => cfgMod.ID == ModName);
+            } 
+        }
+
+        private void ModInfoBox()
+        {
+            using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                GUILayout.Label("Info for selected mod: ", GUI.skin.label);
+
+                GUI.color = Color.cyan;
+                GUILayout.Label($"{nameof(ConfigurableMod.GameID)}: {SelectedMod.GameID}", GUI.skin.label);
+                GUILayout.Label($"{nameof(ConfigurableMod.ID)}: {SelectedMod.ID}", GUI.skin.label);
+                GUILayout.Label($"{nameof(ConfigurableMod.UniqueID)}: {SelectedMod.UniqueID}", GUI.skin.label);
+                GUILayout.Label($"{nameof(ConfigurableMod.Version)}: {SelectedMod.Version}", GUI.skin.label);
+                foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
+                {
+                    GUILayout.Label($"Button {nameof(ConfigurableModButton.ID)}: {configurableModButton.ID}", GUI.skin.label);
+                    GUILayout.Label($"Key binding {nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
+                }               
+            }
+            GUI.color = DefaultGuiColor;
         }
 
         private void ModListScrollView()
@@ -666,15 +707,16 @@ namespace ModManager
         private void MultiplayerInfoBox()
         {
             LocalHostDisplayName = GetHostPlayerName();
-            using (var multiplayeinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
+            SetNewChatRequestId();
+            using (var multiplayerinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUILayout.Label("Current multiplayer info: ", GUI.skin.label);
 
                 GUI.color = Color.cyan;                
                 GUILayout.Label($"Host player name: {LocalHostDisplayName}", GUI.skin.label);
-                GUILayout.Label($"Host is playing with {ModName} { (IsHostManager ? " activated" : " disabled"  )}", GUI.skin.label);
-                GUILayout.Label($"Host is {(IsHostWithPlayersInCoop ? " playing in coop" : " not playing in coop")}", GUI.skin.label);
-                GUILayout.Label($"Mods and cheats for multiplayer are  {(AllowModsAndCheatsForMultiplayer ? " enabled" : " disabled")}", GUI.skin.label);
+                GUILayout.Label($"Host is playing with {ModName} { (IsHostManager ? "activated" : "disabled"  )}", GUI.skin.label);
+                GUILayout.Label($"Host is {(IsHostWithPlayersInCoop ? "playing in coop" : "not playing in coop")}", GUI.skin.label);
+                GUILayout.Label($"Mods and cheats for multiplayer are {(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"Client player name: {GetClientPlayerName()}", GUI.skin.label);
                 GUILayout.Label($"Command to unlock mods: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
             }
@@ -748,17 +790,11 @@ namespace ModManager
                 onOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
                 if (SwitchPlayerVersusMode)
                 {
-                    GreenHellGame.Instance.m_OnlyTutorial = false;
-                    GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Friends;
-                    MainMenuChooseMode.s_DisplayMode = MainMenuChooseMode.MainMenuChooseModeType.Multiplayer;
-                    MainMenuManager.Get().SetActiveScreen(typeof(MainMenuJoinOrHost));
+                    
                 }
                 else
                 {
-                    GreenHellGame.Instance.m_OnlyTutorial = false;
-                    GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Singleplayer;
-                    MainMenuChooseMode.s_DisplayMode = MainMenuChooseMode.MainMenuChooseModeType.Singleplayer;
-                    MainMenuManager.Get().SetActiveScreen(typeof(MainMenuChooseMode));
+                
                 }
             }
         }
@@ -801,12 +837,12 @@ namespace ModManager
                 {
                     P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
                     SaveGame.SaveCoop();
-                    ReloadLobby();
+                    //ReloadLobby();
                 }
                 if (!IsHostWithPlayersInCoop)
                 {
                     SaveGame.Save();
-                    MainLevel.Instance.Initialize();
+                    //MainLevel.Instance.Initialize();
                 }
             }
             catch (Exception exc)

@@ -45,14 +45,14 @@ namespace ModManager
         {
             if (!string.IsNullOrEmpty(keyBinding))
             {
-                keyBinding = keyBinding.ToLower().Trim();
-                if (keyBinding.StartsWith('d'))
+                keyBinding = keyBinding.Trim();
+                if (keyBinding.StartsWith('D'))
                 {
-                    keyBinding = keyBinding.Replace("d", "Alpha");
+                    keyBinding = keyBinding.Replace("D", "Alpha");
                 }
                 else
                 {
-                    keyBinding = keyBinding.Replace("numpad", "Keypad").Replace("oem", string.Empty);
+                    keyBinding = keyBinding.Replace("NumPad", "Keypad").Replace("Oem", string.Empty);
                 }
                 return EnumUtils<KeyCode>.GetValue(keyBinding);
             }
