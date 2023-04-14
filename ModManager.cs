@@ -234,55 +234,6 @@ namespace ModManager
             }
         }
 
-        private KeyCode GetConfigurableKey(string buttonId)
-        {
-            KeyCode configuredKeyCode = default;
-            string configuredKeybinding = string.Empty;
-
-            try
-            {
-                if (File.Exists(RuntimeConfigurationFile))
-                {
-                    using (var xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
-                    {
-                        while (xmlReader.Read())
-                        {
-                            if (xmlReader["ID"] == ModName)
-                            {
-                                if (xmlReader.ReadToFollowing(nameof(Button)) && xmlReader["ID"] == buttonId)
-                                {
-                                    configuredKeybinding = xmlReader.ReadElementContentAsString();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(configuredKeybinding))
-                {
-                    configuredKeyCode = EnumUtils<KeyCode>.GetValue(configuredKeybinding);
-                }
-                else
-                {
-                    if (buttonId == nameof(ModKeybindingId))
-                    {
-                        configuredKeyCode = ModKeybindingId;
-                    }
-                }
-
-                return configuredKeyCode;
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(GetConfigurableKey));
-                if (buttonId == nameof(ModKeybindingId))
-                {
-                    configuredKeyCode = ModKeybindingId;
-                }
-                return configuredKeyCode;
-            }
-        }
-
         private void Start()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
