@@ -392,8 +392,7 @@ namespace ModManager
         {
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
-            LocalCursorManager = CursorManager.Get();
-            LocalSteamManager = GreenHellGame.Instance.m_SteamManager;
+            LocalCursorManager = CursorManager.Get();         
             LocalMainMenuManager = MainMenuManager.Get();
         }
 
@@ -835,6 +834,7 @@ namespace ModManager
 
         private static void LoadMainMenu()
         {
+            LocalMainMenuManager = MainMenuManager.Get();
             if (SwitchPlayerVersusMode)
             {
                 MainMenuChooseMode.s_DisplayMode = MainMenuChooseMode.MainMenuChooseModeType.Multiplayer;
