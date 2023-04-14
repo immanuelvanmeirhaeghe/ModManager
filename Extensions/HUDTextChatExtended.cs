@@ -2,7 +2,7 @@
  * This code was inspired by Moritz. Thank you!
  * */
 
-namespace ModManager
+namespace ModManager.Extensions
 {
     class HUDTextChatExtended : HUDTextChat
     {

@@ -1,4 +1,4 @@
-﻿namespace ModManager
+﻿namespace ModManager.Extensions
 {
     class HUDTextChatHistoryExtended : HUDTextChatHistory
     {

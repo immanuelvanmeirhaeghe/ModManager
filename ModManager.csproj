@@ -354,10 +354,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions\Enums.cs" />
+    <Compile Include="ConfigurableModButton.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="Extensions\HUDTextChatExtended.cs" />
     <Compile Include="Extensions\HUDTextChatHistoryExtended.cs" />
     <Compile Include="Extensions\PlayerExtended.cs" />
+    <Compile Include="ConfigurableMod.cs" />
     <Compile Include="ModManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ModManager
+namespace ModManager.Extensions
 {
     class PlayerExtended : Player
     {
