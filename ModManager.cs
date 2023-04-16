@@ -34,6 +34,9 @@ namespace ModManager
         private static readonly float ModScreenMaxHeight = 200f;
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
+        private static float ModMpScreenStartPositionX { get; set; } = Screen.width / 2.5f;
+        private static float ModMpScreenStartPositionY { get; set; } = Screen.height / 2.5f;
+
         private static bool IsMinimized { get; set; } = false;
 
         private static CursorManager LocalCursorManager;
@@ -57,9 +60,10 @@ namespace ModManager
         private bool ShowGameInfo = false;
         private bool ShowMpInfo = false;
         private bool ShowMpMngr = false;
+        private bool ShowModInfo = false;
 
         public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
-        public static Rect ModMpMngrScreen = new Rect(Screen.width / 2f, Screen.height / 2f, 500f, 150f);
+        public static Rect ModMpMngrScreen = new Rect(ModManagerScreen.width / 2f, ModManagerScreen.height / 2f, 500f, 150f);
 
         public static List<ConfigurableMod> ModList { get; set; } = new List<ConfigurableMod>();
 
@@ -235,7 +239,12 @@ namespace ModManager
             onPermissionValueChanged += ModManager_onPermissionValueChanged;
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
             ModList = GetModList();
-            ShortcutKey = ModList.Find(cfgMod => cfgMod.ID == ModName).ConfigurableModButtons.Find(cfgButton => cfgButton.ID == nameof(ShortcutKey)).KeyCode;                      
+            ShortcutKey = GetShortcutKey(nameof(ShortcutKey));                      
+        }
+
+        private KeyCode GetShortcutKey(string buttonID)
+        {
+            return ModList.Find(cfgMod => cfgMod.ID == ModName).ConfigurableModButtons.Find(cfgButton => cfgButton.ID == buttonID).KeyCode;
         }
 
         private List<ConfigurableMod> GetModList()
@@ -290,7 +299,7 @@ namespace ModManager
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
         {
-            // GreenHellGame.DEBUG = optionValue;
+            GreenHellGame.DEBUG = optionValue;
             IsModActiveForMultiplayer = optionValue;
             if (optionValue)
             {
@@ -348,11 +357,15 @@ namespace ModManager
                 case 3:
                     ShowMpInfo = !ShowMpInfo;
                     return;
+                case 4:
+                    ShowModInfo = !ShowModInfo;
+                    return;
                 default:
                     ShowUI = !ShowUI;
                     ShowMpMngr = !ShowMpMngr;
                     ShowGameInfo = !ShowGameInfo;
                     ShowMpInfo = !ShowMpInfo;
+                    ShowModInfo = !ShowModInfo;
                     return;
             }          
         }
@@ -369,7 +382,7 @@ namespace ModManager
 
         private void InitWindow()
         {
-            if (ShowUI)
+            if (ShowUI || ShowMpMngr)
             {
                 ModManagerScreen = GUILayout.Window(
                                                GetHashCode(),
@@ -383,23 +396,23 @@ namespace ModManager
                                                 GUILayout.ExpandHeight(true),
                                                 GUILayout.MinHeight(ModScreenMinHeight),
                                                 GUILayout.MaxHeight(ModScreenMaxHeight));
-            }
 
-            if (ShowMpMngr)
-            {
-                ModMpMngrScreen = GUILayout.Window(
-                                                                                                    GetHashCode(),       
-                                                                                                    ModMpMngrScreen,
-                                                                                                    InitMpMngrWindow,
-                                                                                                    $"{ModName} Multplayer",
-                                                                                                    GUI.skin.window,
-                                                                                                    GUILayout.ExpandWidth(true),
-                                                                                                    GUILayout.MinWidth(ModScreenMinWidth),
-                                                                                                    GUILayout.MaxWidth(ModScreenMaxWidth),
-                                                                                                    GUILayout.ExpandHeight(true),
-                                                                                                    GUILayout.MinHeight(ModScreenMinHeight),
-                                                                                                    GUILayout.MaxHeight(ModScreenMaxHeight));
-            }
+                if (ShowMpMngr)
+                {
+                    ModMpMngrScreen = GUILayout.Window(
+                                                                                                        GetHashCode(),
+                                                                                                        ModMpMngrScreen,
+                                                                                                        InitMpMngrWindow,
+                                                                                                        $"{ModName} Multiplayer",
+                                                                                                        GUI.skin.window,
+                                                                                                        GUILayout.ExpandWidth(true),
+                                                                                                        GUILayout.MinWidth(ModScreenMinWidth),
+                                                                                                        GUILayout.MaxWidth(ModScreenMaxWidth),
+                                                                                                        GUILayout.ExpandHeight(true),
+                                                                                                        GUILayout.MinHeight(ModScreenMinHeight),
+                                                                                                        GUILayout.MaxHeight(ModScreenMaxHeight));
+                }
+            }          
         }
 
         private static void InitData()
@@ -421,17 +434,55 @@ namespace ModManager
             ShowMpMngr = false;
             ShowMpInfo = false;
             ShowGameInfo = false;
+            ShowModInfo = false;
             EnableCursor(false);
         }
 
         private void InitMpMngrWindow(int windowID)
-        {       
+        {
+            ModMpScreenStartPositionX = ModMpMngrScreen.x;
+            ModMpScreenStartPositionY = ModMpMngrScreen.y;
+
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUILayout.Label($"Multiplayer", GUI.skin.label);
-                PlayersScrollViewBox();
+                MpPlayersBox();
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+        }
+
+        private void MpPlayersBox()
+        {
+            GUILayout.Label($"Multiplayer", GUI.skin.label);
+            PlayersScrollViewBox();
+            using (var actionScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            {
+                if (GUILayout.Button("Kick", GUI.skin.button))
+                {
+                    if (SelectedPlayerName != LocalHostDisplayName)
+                    {
+                        OnClickKickPlayerButton();
+                    }
+                    else
+                    {
+                        ShowHUDBigInfo($"Impossible to kick yourself, {LocalHostDisplayName}!");
+                    }                 
+                }
+                if (GUILayout.Button("Send message", GUI.skin.button))
+                {
+                    if (SelectedPlayerName != LocalHostDisplayName)
+                    {
+                        OnClickSendMessageButton();
+                    }
+                    else
+                    {
+                        ShowHUDBigInfo($"Impossible to send messages to yourself, {LocalHostDisplayName}!");
+                    }
+                }
+                if (GUILayout.Button("Close", GUI.skin.button))
+                {
+                    ToggleShowUI(1);
+                }
+            }
         }
 
         private void PlayersScrollViewBox()
@@ -444,34 +495,7 @@ namespace ModManager
 
             using (var pScrollViewScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                PlayerListScrollView();
-                using (var actionScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    if (GUILayout.Button("Kick", GUI.skin.button))
-                    {
-                        if (SelectedPlayerName !=LocalHostDisplayName)
-                        {
-                            OnClickKickPlayerButton();                            
-                        }
-                        else
-                        {
-                            ShowHUDBigInfo($"Impossible to kick yourself, {LocalHostDisplayName}!");
-                        }
-                        ToggleShowUI(1);
-                    }
-                    if (GUILayout.Button("Send message", GUI.skin.button))
-                    {
-                        if (SelectedPlayerName != LocalHostDisplayName)
-                        {
-                            OnClickSendMessageButton();                           
-                        }
-                        else
-                        {
-                            ShowHUDBigInfo($"Impossible to send messages to yourself, {LocalHostDisplayName}!");
-                        }
-                        ToggleShowUI(1);
-                    }
-                }
+                PlayerListScrollView();                
             }
         }
 
@@ -508,12 +532,16 @@ namespace ModManager
         private void PlayerListScrollView()
         {
             GUILayout.Label($"Select player:", GUI.skin.label);
-            PlayerListScrollViewPosition = GUILayout.BeginScrollView(PlayerListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
+            PlayerListScrollViewPosition = GUILayout.BeginScrollView(PlayerListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+            int _SelectedPlayerIndex = SelectedPlayerIndex;
             string[] playerNames = GetPlayerNames();
             if (playerNames != null)
             {             
                 SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, playerNames, 3, SelectButtonStyle);
-                SelectedPlayerName = playerNames[SelectedPlayerIndex];
+                if (_SelectedPlayerIndex != SelectedPlayerIndex)
+                {
+                    SelectedPlayerName = playerNames[SelectedPlayerIndex];
+                }
             }
             GUILayout.EndScrollView();
         }
@@ -544,15 +572,16 @@ namespace ModManager
 
         private void ManageModListBox()
         {
-            int _SelectedModIDIndex = SelectedModIDIndex;
-
             GUI.color = DefaultGuiColor;
             GUILayout.Label($"Mods currently available from ModAPI as found in runtime configuration file:", GUI.skin.label);
             using (var managemodlistScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ModListScrollView();
-
-                if (_SelectedModIDIndex != SelectedModIDIndex)
+                if (GUILayout.Button("Mod Info", GUI.skin.button))
+                {
+                    ToggleShowUI(4);
+                }
+                if (ShowModInfo)
                 {
                   ModInfoBox();
                 }               
@@ -579,13 +608,18 @@ namespace ModManager
 
         private void ModListScrollView()
         {
-            ModListScrollViewPosition = GUILayout.BeginScrollView(ModListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
+            GUILayout.Label($"Select mod:", GUI.skin.label);
+            ModListScrollViewPosition = GUILayout.BeginScrollView(ModListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+            int _SelectedModIDIndex = SelectedModIDIndex;
             string[] modlistNames = GetModListNames();
             if (modlistNames != null)
             {             
                 SelectedModIDIndex = GUILayout.SelectionGrid(SelectedModIDIndex, modlistNames, 3, SelectButtonStyle);
-                SelectedModID = modlistNames[SelectedModIDIndex];
-                SelectedMod = ModList.Find(cfgMod => cfgMod.ID == SelectedModID);
+                if (_SelectedModIDIndex != SelectedModIDIndex)
+                {
+                    SelectedModID = modlistNames[SelectedModIDIndex];
+                    SelectedMod = ModList.Find(cfgMod => cfgMod.ID == SelectedModID);
+                }
             }
             GUILayout.EndScrollView();
         }

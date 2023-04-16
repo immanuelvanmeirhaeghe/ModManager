@@ -1,11 +1,11 @@
 <Mod ID="ModManager">
   <Compatible>2.4.2</Compatible>
-  <Button Standard="D0" ID="ModShortcutKey">
+  <Button Standard="D0" ID="ShortcutKey">
     <Name>
-      <EN>ModShortcutKey</EN>
+      <EN>ShortcutKey key to open the main mod screen in-game.</EN>
     </Name>
     <Description>
-      <EN>ShortcutKey key to open the main mod screen in-game.</EN>
+      <EN>ShortcutKey</EN>
     </Description>
   </Button>
   <Name>
