@@ -2,10 +2,10 @@
   <Compatible>2.4.2</Compatible>
   <Button Standard="D0" ID="ShortcutKey">
     <Name>
-      <EN>ShortcutKey key to open the main mod screen in-game.</EN>
+      <EN>Press shortcut key</EN>
     </Name>
     <Description>
-      <EN>ShortcutKey</EN>
+      <EN> to open the main mod screen in-game.</EN>
     </Description>
   </Button>
   <Name>

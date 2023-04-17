@@ -19,4 +19,18 @@ namespace ModManager.Enums
         Warning,
         Error
     }
+    /// <summary>
+    /// Enumerates ModAPI supported game identifiers.
+    /// </summary>
+    public enum GameID
+    {
+        EscapeThePacific,
+        GreenHell,
+        SonsOfTheForest,
+        Subnautica,
+        TheForest,
+        TheForestDedicatedServer,
+        TheForestVR
+    }
+
 }

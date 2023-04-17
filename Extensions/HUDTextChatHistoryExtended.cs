@@ -2,29 +2,31 @@
 {
     class HUDTextChatHistoryExtended : HUDTextChatHistory
     {
+        private static readonly ModManager LocalModManager = ModManager.Get();
+
         protected override void Start()
         {
-            base.Start();
+            base.Start();         
         }
 
-        private void SetModManager(bool optionValue)
+        private void InitModManager(bool optionValue)
         {
-            ModManager.RequestInfoShown = optionValue;
-            ModManager.ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
+            LocalModManager.RequestInfoShown = optionValue;
+            LocalModManager.ToggleModOption(optionValue, nameof(LocalModManager.RequestInfoShown));
 
-            ModManager.AllowModsAndCheatsForMultiplayer = optionValue;
-            ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+            LocalModManager.AllowModsAndCheatsForMultiplayer = optionValue;
+            LocalModManager.ToggleModOption(optionValue, nameof(LocalModManager.AllowModsAndCheatsForMultiplayer));
         }
 
         protected override void Awake()
         {
             base.Awake();
-            SetModManager(false);
+            InitModManager(false);
         }
 
         protected override void OnDestroy()
         {
-            SetModManager(false);
+            InitModManager(false);
             base.OnDestroy();
         }
 
@@ -36,18 +38,18 @@
             bool isMaster = l_P2PPeer.IsMaster();
             string p2pPeerName = l_P2PPeer.GetDisplayName();
 
-            if (textMessage == ModManager.HostCommandToAllowModsWithRequestId())
+            if (textMessage == LocalModManager.HostCommandToAllowModsWithRequestId())
             {
                 if (isMaster)
                 {
-                    ModManager.AllowModsAndCheatsForMultiplayer = true;
-                    ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
-                    StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
-                    ModManager.SetNewChatRequestId();
+                    LocalModManager.AllowModsAndCheatsForMultiplayer = true;
+                    LocalModManager.ToggleModOption(true, nameof(LocalModManager.AllowModsAndCheatsForMultiplayer));
+                    StoreMessage(LocalModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
+                    LocalModManager.SetNewChatRequestId();
                 }
                 else
                 {
-                    StoreMessage(ModManager.OnlyHostCanAllowMessage());
+                    StoreMessage(LocalModManager.OnlyHostCanAllowMessage());
                 }
             }
             else
