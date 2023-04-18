@@ -22,6 +22,7 @@ namespace ModManager
     /// </summary>
     public class ModManager : MonoBehaviour
     {
+        private const string MpManagerText = "Multiplayer Manager";
         private static ModManager Instance;
         private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
       
@@ -239,7 +240,8 @@ namespace ModManager
             onPermissionValueChanged += ModManager_onPermissionValueChanged;
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
             ConfigurableModList = GetModList();
-            ShortcutKey = GetShortcutKey();                      
+            ShortcutKey = GetShortcutKey();
+            SetNewChatRequestId();
         }
 
         public KeyCode GetShortcutKey()
@@ -373,7 +375,7 @@ namespace ModManager
 
         private void OnGUI()
         {
-            if (ShowUI || ShowMpMngr)
+            if (ShowUI)
             {
                 InitData();
                 InitSkinUI();
@@ -383,7 +385,7 @@ namespace ModManager
 
         private void InitWindow()
         {
-            if (ShowUI || ShowMpMngr)
+            if (ShowUI)
             {
                 ModManagerScreen = GUILayout.Window(
                                                GetHashCode(),
@@ -396,22 +398,7 @@ namespace ModManager
                                                 GUILayout.MaxWidth(ModScreenMaxWidth),
                                                 GUILayout.ExpandHeight(true),
                                                 GUILayout.MinHeight(ModScreenMinHeight),
-                                                GUILayout.MaxHeight(ModScreenMaxHeight));
-
-                if (ShowMpMngr)
-                {
-                    ModMpMngrScreen = GUILayout.Window(GetHashCode(),
-                                                       ModMpMngrScreen,
-                                                       InitMpMngrWindow,
-                                                       $"{ModName} - Multiplayer Manager",
-                                                       GUI.skin.window,
-                                                       GUILayout.ExpandWidth(true),
-                                                       GUILayout.MinWidth(ModScreenMinWidth),
-                                                       GUILayout.MaxWidth(ModScreenMaxWidth),
-                                                       GUILayout.ExpandHeight(true),
-                                                       GUILayout.MinHeight(ModScreenMinHeight),
-                                                       GUILayout.MaxHeight(ModScreenMaxHeight));
-                }
+                                                GUILayout.MaxHeight(ModScreenMaxHeight));                                
             }          
         }
 
@@ -597,7 +584,7 @@ namespace ModManager
        
         private void ModListScrollView()
         {
-            using (var list123scrollscope = new GUILayout.VerticalScope())
+            using (var list123scrollscope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUILayout.Label($"Mods currently available from ModAPI as found in runtime configuration file:", GUI.skin.label);
                 AllModsScrollView();
@@ -703,9 +690,24 @@ namespace ModManager
         {
             using (var playerlistScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
-                if (GUILayout.Button("Multiplayer Manager",SelectButtonStyle))
+                if (GUILayout.Button(MpManagerText, GUI.skin.button))
                 {
-                    ToggleShowUI(1);
+                    ShowMpMngr = true;
+                }
+                if (ShowMpMngr)
+                {
+                    ModMpMngrScreen = GUILayout.Window(
+                        GetHashCode(),
+                        ModMpMngrScreen,
+                        InitMpMngrWindow,
+                        $"{ModName} - {MpManagerText}",
+                        GUI.skin.window,
+                        GUILayout.ExpandWidth(true),
+                        GUILayout.MinWidth(ModScreenMinWidth),
+                        GUILayout.MaxWidth(ModScreenMaxWidth),
+                        GUILayout.ExpandHeight(true),
+                        GUILayout.MinHeight(ModScreenMinHeight),
+                        GUILayout.MaxHeight(ModScreenMaxHeight));
                 }
             }
         }
@@ -765,7 +767,6 @@ namespace ModManager
                 GUILayout.Label($"{nameof(LocalHostDisplayName)}:  {LocalHostDisplayName}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsHostManager)}: { (IsHostManager ? "enabled" : "disabled"  )}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}: {( IsHostWithPlayersInCoop ? "enabled" : "disabled")}", GUI.skin.label);             
-                GUILayout.Label($"Client player name: {GetClientPlayerName()}", GUI.skin.label);
                 GUILayout.Label($"Command to unlock mods: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
             }
         }
@@ -775,40 +776,32 @@ namespace ModManager
             using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUILayout.Label("Mod Info", GUI.skin.label);
-                using (var gidScope = new GUILayout.HorizontalScope())
+                using (var gidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.GameID)}:", GUI.skin.label);
                     GUILayout.Label($"{SelectedMod.GameID}", GUI.skin.label);
                 }
-                using (var midScope = new GUILayout.HorizontalScope())
+                using (var midScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.ID)}:", GUI.skin.label);
                     GUILayout.Label($"{SelectedMod.ID}", GUI.skin.label);
                 }
-                using (var uidScope = new GUILayout.HorizontalScope())
+                using (var uidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.UniqueID)}:", GUI.skin.label);
                     GUILayout.Label($"{SelectedMod.UniqueID}", GUI.skin.label);
                 }
-                using (var versionScope = new GUILayout.HorizontalScope())
+                using (var versionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.Version)}:", GUI.skin.label);
                     GUILayout.Label($"{SelectedMod.Version}", GUI.skin.label);
                 }
-                using (var btnsIDScope = new GUILayout.HorizontalScope())
+                using (var btnsScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                     {
-                        GUILayout.Label($"Button {nameof(ConfigurableModButton.ID)}:", GUI.skin.label);
-                        GUILayout.Label($"{configurableModButton.ID}", GUI.skin.label);
-                    }
-                }
-                using (var btnsCodeScope = new GUILayout.HorizontalScope())
-                {
-                    foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
-                    {
-                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}:", GUI.skin.label);
-                        GUILayout.Label($"{configurableModButton.KeyBinding}", GUI.skin.label);
+                        GUILayout.Label($"Button {nameof(ConfigurableModButton.ID)}: {configurableModButton.ID}", GUI.skin.label);
+                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
                     }
                 }
             }
