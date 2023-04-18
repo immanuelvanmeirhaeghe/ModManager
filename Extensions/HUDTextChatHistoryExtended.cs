@@ -9,11 +9,8 @@
 
         private void InitModManager(bool optionValue)
         {
-            ModManager.Get().RequestInfoShown = optionValue;
-            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
-
-            ModManager.Get().AllowModsAndCheatsForMultiplayer = optionValue;
-            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+            ModManager.Get().RequestInfoShown = optionValue;          
+            ModManager.Get().AllowModsAndCheatsForMultiplayer = optionValue;            
         }
 
         protected override void Awake()

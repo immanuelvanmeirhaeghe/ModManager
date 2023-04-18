@@ -303,17 +303,19 @@ namespace ModManager
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
         {
-            GreenHellGame.DEBUG = optionValue;
-            IsModActiveForMultiplayer = optionValue;
             if (optionValue)
             {
+                GreenHellGame.DEBUG = true;
                 GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
                 MainLevel.Instance.m_GameMode = GameMode.Debug;
+                IsModActiveForMultiplayer = true;
             }
             else
             {
+                GreenHellGame.DEBUG = false;
                 GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
                 MainLevel.Instance.m_GameMode = GameModeAtStart;
+                IsModActiveForMultiplayer = false;
             }
         }
 
@@ -489,6 +491,14 @@ namespace ModManager
             GUI.color = DefaultGuiColor;
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
+                if (GUILayout.Button("Multiplayer Info", GUI.skin.button))
+                {
+                    ToggleShowUI(3);
+                }
+                if (ShowMpInfo)
+                {
+                    MultiplayerInfoBox();
+                }
                 PlayersScrollViewBox();
                 SendTexMessagesBox();
                 MpActionButtons();
@@ -715,11 +725,13 @@ namespace ModManager
 
         private void ModOptionsBox()
         {
-            GUI.color = DefaultGuiColor;
-
-            GUILayout.Label($"To toggle the {ModName} main UI, press [{ShortcutKey}]", GUI.skin.label);
+            GUI.color = DefaultGuiColor;          
             using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
+                GUILayout.Label($"Shortcut key to open or close {ModName} : [{ShortcutKey}]", GUI.skin.label);
+                AllowModsAndCheatsOption();
+                RequestInfoShownOption();
+                SwitchPlayerVersusModeOption();
                 if (GUILayout.Button("Game Info", GUI.skin.button))
                 {
                     ToggleShowUI(2);
@@ -729,18 +741,6 @@ namespace ModManager
                     GUILayout.Label("Game Info", GUI.skin.label);
                     GameInfoBox();
                 }
-                if (GUILayout.Button("Multiplayer Info", GUI.skin.button))
-                {
-                    ToggleShowUI(3);
-                }
-                if (ShowMpInfo)
-                {
-                    GUILayout.Label("Multiplayer Info", GUI.skin.label);
-                    MultiplayerInfoBox();
-                }
-                AllowModsAndCheatsOption();
-                RequestInfoShownOption();
-                SwitchPlayerVersusModeOption();
             }
         }
 
@@ -753,7 +753,7 @@ namespace ModManager
                 GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.DEBUG)} Mode: {(GreenHellGame.DEBUG ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"{nameof(GameModeAtStart)}: {GameModeAtStart}", GUI.skin.label);
                 GUILayout.Label($"{nameof(GreenHellGame)}.{nameof(GreenHellGame.Instance)}.{nameof(GreenHellGame.Instance.m_GHGameMode)}: {GreenHellGame.Instance.m_GHGameMode}", GUI.skin.label);
-                GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_GameMode)}: {MainLevel.Instance.m_GameMode}", GUI.skin.label);
+                GUILayout.Label($"{nameof(P2PSession)}.{nameof(P2PSession.Instance)}.{nameof(P2PSession.Instance.GetGameVisibility)}: {P2PSession.Instance.GetGameVisibility()}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: {(IsModActiveForSingleplayer ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}: {(IsModActiveForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
                 GUILayout.Label($"{nameof(PlayerCount)}: {PlayerCount}", GUI.skin.label);
@@ -769,10 +769,10 @@ namespace ModManager
             }
             using (var multiplayerinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {       
-                GUILayout.Label($"{nameof(LocalHostDisplayName)}:  {LocalHostDisplayName}", GUI.skin.label);
+                GUILayout.Label($"{nameof(LocalHostDisplayName)}: {LocalHostDisplayName}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsHostManager)}: { (IsHostManager ? "enabled" : "disabled"  )}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}: {( IsHostWithPlayersInCoop ? "enabled" : "disabled")}", GUI.skin.label);             
-                GUILayout.Label($"Command to unlock mods: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
+                GUILayout.Label($"Host command to allow mods for multiplayer: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
             }
         }
 
