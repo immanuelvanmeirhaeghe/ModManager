@@ -28,8 +28,8 @@ namespace ModManager
       
         private static readonly string ModName = nameof(ModManager);
         private static readonly float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenTotalHeight = 250f;
-        private static readonly float ModScreenMinWidth = 450f;
+        private static readonly float ModScreenTotalHeight = 450f;
+        private static readonly float ModScreenMinWidth = 500f;
         private static readonly float ModScreenMaxWidth = Screen.width;
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = Screen.height;
@@ -808,8 +808,18 @@ namespace ModManager
                 GUI.color = DefaultGuiColor;
                 foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                 {
-                    GUILayout.Label($"{nameof(ConfigurableModButton.ID)}: {configurableModButton.ID}", GUI.skin.label);
-                    GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
+                    using (var btnidScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"{nameof(ConfigurableModButton.ID)}:", GUI.skin.label);
+                        GUILayout.Label($"{configurableModButton.ID}", GUI.skin.label);
+                    }
+                    using (var btnbindScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}:", GUI.skin.label);
+                        GUILayout.Label($"{configurableModButton.KeyBinding}", GUI.skin.label);
+                    }
+                 
+                  
                 }
             }
         }
@@ -828,6 +838,9 @@ namespace ModManager
 
         private void CollapseWindow()
         {
+            ModScreenStartPositionX = ModManagerScreen.x;
+            ModScreenStartPositionY = ModManagerScreen.y;
+
             if (!IsMinimized)
             {
                 ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
