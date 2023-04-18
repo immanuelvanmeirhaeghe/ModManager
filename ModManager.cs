@@ -30,7 +30,7 @@ namespace ModManager
         private static readonly float ModScreenTotalWidth = 500f;
         private static readonly float ModScreenTotalHeight = 250f;
         private static readonly float ModScreenMinWidth = 450f;
-        private static readonly float ModScreenMaxWidth = 550f;
+        private static readonly float ModScreenMaxWidth = Screen.width;
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = Screen.height;
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
@@ -51,7 +51,8 @@ namespace ModManager
             get
             {
                 var selectButtonStyle = new GUIStyle(GUI.skin.button);
-                selectButtonStyle.onActive.textColor = Color.cyan;
+                selectButtonStyle.focused.textColor = Color.cyan;
+                selectButtonStyle.active.textColor = Color.cyan;
                 return selectButtonStyle;
             }
         }
@@ -68,7 +69,7 @@ namespace ModManager
         public static List<IConfigurableMod> ConfigurableModList { get; set; } = new List<IConfigurableMod>();
         public static List<P2PPeer> CoopPlayerList { get; set; } = default;
        
-        public float ChatRequestId { get; set; } 
+        public int ChatRequestId { get; set; } 
         public string LocalHostDisplayName { get; set; } = string.Empty;
         public GameMode GameModeAtStart { get; set; } = GameMode.None;
         public string SteamAppId  => GreenHellGame.s_SteamAppId.m_AppId.ToString();
@@ -119,7 +120,7 @@ namespace ModManager
 
         public void SetNewChatRequestId()
         {
-            ChatRequestId = UnityEngine.Random.Range(0f,9999f);
+            ChatRequestId = Mathf.FloorToInt(UnityEngine.Random.Range(0f,9999f));
         }
 
         public string HostCommandToAllowModsWithRequestId()
@@ -761,7 +762,11 @@ namespace ModManager
 
         private void MultiplayerInfoBox()
         {
-            LocalHostDisplayName = GetHostPlayerName();           
+            LocalHostDisplayName = GetHostPlayerName();
+            if (ChatRequestId == 0 || ChatRequestId == int.MinValue || ChatRequestId == int.MaxValue)
+            {
+                SetNewChatRequestId();
+            }
             using (var multiplayerinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {       
                 GUILayout.Label($"{nameof(LocalHostDisplayName)}:  {LocalHostDisplayName}", GUI.skin.label);
@@ -775,7 +780,9 @@ namespace ModManager
         {
             using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUILayout.Label("Mod Info", GUI.skin.label);
+                GUI.color = Color.cyan;
+                GUILayout.Label("Mod: ", GUI.skin.label);
+                GUI.color= DefaultGuiColor;
                 using (var gidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.GameID)}:", GUI.skin.label);
@@ -796,13 +803,13 @@ namespace ModManager
                     GUILayout.Label($"{nameof(ConfigurableMod.Version)}:", GUI.skin.label);
                     GUILayout.Label($"{SelectedMod.Version}", GUI.skin.label);
                 }
-                using (var btnsScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                GUI.color = Color.cyan;
+                GUILayout.Label("Buttons: ", GUI.skin.label);
+                GUI.color = DefaultGuiColor;
+                foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                 {
-                    foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
-                    {
-                        GUILayout.Label($"Button {nameof(ConfigurableModButton.ID)}: {configurableModButton.ID}", GUI.skin.label);
-                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
-                    }
+                    GUILayout.Label($"{nameof(ConfigurableModButton.ID)}: {configurableModButton.ID}", GUI.skin.label);
+                    GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}: {configurableModButton.KeyBinding}", GUI.skin.label);
                 }
             }
         }

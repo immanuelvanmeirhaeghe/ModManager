@@ -5,24 +5,22 @@
 namespace ModManager.Extensions
 {
     class HUDTextChatExtended : HUDTextChat
-    {
-        private static readonly ModManager LocalModManager = ModManager.Get();
-        
+    {   
         protected override void OnShow()
         {
-            if (!LocalModManager.RequestInfoShown)
+            if (!ModManager.Get().RequestInfoShown)
             {
-                LocalModManager.ToggleModOption(true, nameof(LocalModManager.RequestInfoShown));
-                m_History.StoreMessage(LocalModManager.ClientSystemInfoChatMessage(LocalModManager.GetClientCommandToUseMods()));
+                ModManager.Get().ToggleModOption(true, nameof(ModManager.RequestInfoShown));
+                m_History.StoreMessage(ModManager.Get().ClientSystemInfoChatMessage(ModManager.Get().GetClientCommandToUseMods()));
             }
             base.OnShow();
-            LocalModManager.Disable = true;
+            ModManager.Get().Disable = true;
         }
 
         protected override void OnHide()
         {
             base.OnHide();
-            LocalModManager.Disable = false;
+            ModManager.Get().Disable = false;
         }
 
         protected override void SendTextMessage()
@@ -31,11 +29,11 @@ namespace ModManager.Extensions
 
             if (fieldTextMessage.Length > 0)
             {
-                if (fieldTextMessage == LocalModManager.GetClientCommandToUseMods())
+                if (fieldTextMessage == ModManager.Get().GetClientCommandToUseMods())
                 {
-                    LocalModManager.SetNewChatRequestId();
-                    P2PSession.Instance.SendTextChatMessage(LocalModManager.HostSystemInfoChatMessage(LocalModManager.GetHostCommandToAllowMods(LocalModManager.ChatRequestId)));
-                    m_History.StoreMessage(LocalModManager.RequestWasSentMessage());
+                    ModManager.Get().SetNewChatRequestId();
+                    P2PSession.Instance.SendTextChatMessage(ModManager.Get().HostSystemInfoChatMessage(ModManager.Get().GetHostCommandToAllowMods(ModManager.Get().ChatRequestId)));
+                    m_History.StoreMessage(ModManager.Get().RequestWasSentMessage());
                 }
                 else
                 {
@@ -44,7 +42,7 @@ namespace ModManager.Extensions
                     {
                         m_History.StoreMessage(
                                                                            fieldTextMessage,
-                                                                           LocalModManager.GetClientPlayerName(),
+                                                                           ModManager.Get().GetClientPlayerName(),
                                                                            ReplicatedLogicalPlayer.s_LocalLogicalPlayer ? ReplicatedLogicalPlayer.s_LocalLogicalPlayer.GetPlayerColor() : HUDTextChatHistory.NormalColor
                                                                         );
                     }
