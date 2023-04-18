@@ -28,11 +28,11 @@ namespace ModManager
       
         private static readonly string ModName = nameof(ModManager);
         private static readonly float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenTotalHeight = 250f;
         private static readonly float ModScreenMinWidth = 450f;
         private static readonly float ModScreenMaxWidth = 550f;
         private static readonly float ModScreenMinHeight = 50f;
-        private static readonly float ModScreenMaxHeight = 200f;
+        private static readonly float ModScreenMaxHeight = Screen.height;
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
         private static float ModMpScreenStartPositionX { get; set; } = Screen.width / 2.5f;
@@ -63,7 +63,7 @@ namespace ModManager
         private bool ShowModInfo = false;
 
         public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
-        public static Rect ModMpMngrScreen = new Rect(ModManagerScreen.x - 50f, ModManagerScreen.y - 50f, 500f, 150f);
+        public static Rect ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         public static KeyCode ShortcutKey { get; set; } = KeyCode.Alpha0;
         public static List<IConfigurableMod> ConfigurableModList { get; set; } = new List<IConfigurableMod>();
         public static List<P2PPeer> CoopPlayerList { get; set; } = default;
@@ -375,7 +375,7 @@ namespace ModManager
 
         private void OnGUI()
         {
-            if (ShowUI)
+            if (ShowUI || ShowMpMngr)
             {
                 InitData();
                 InitSkinUI();
@@ -399,7 +399,22 @@ namespace ModManager
                                                 GUILayout.ExpandHeight(true),
                                                 GUILayout.MinHeight(ModScreenMinHeight),
                                                 GUILayout.MaxHeight(ModScreenMaxHeight));                                
-            }          
+            }
+            if (ShowMpMngr)
+            {
+                ModMpMngrScreen = GUILayout.Window(
+                    GetHashCode(),
+                    ModMpMngrScreen,
+                    InitMpMngrWindow,
+                    $"{ModName} - {MpManagerText}",
+                    GUI.skin.window,
+                    GUILayout.ExpandWidth(true),
+                    GUILayout.MinWidth(ModScreenMinWidth),
+                    GUILayout.MaxWidth(ModScreenMaxWidth),
+                    GUILayout.ExpandHeight(true),
+                    GUILayout.MinHeight(ModScreenMinHeight),
+                    GUILayout.MaxHeight(ModScreenMaxHeight));
+            }
         }
 
         private void InitData()
@@ -494,7 +509,7 @@ namespace ModManager
                 }
                 if (GUILayout.Button("Close", GUI.skin.button))
                 {
-                    ToggleShowUI(1);
+                    ShowMpMngr = false;
                 }
             }
         }
@@ -692,23 +707,8 @@ namespace ModManager
             {
                 if (GUILayout.Button(MpManagerText, GUI.skin.button))
                 {
-                    ShowMpMngr = true;
-                }
-                if (ShowMpMngr)
-                {
-                    ModMpMngrScreen = GUILayout.Window(
-                        GetHashCode(),
-                        ModMpMngrScreen,
-                        InitMpMngrWindow,
-                        $"{ModName} - {MpManagerText}",
-                        GUI.skin.window,
-                        GUILayout.ExpandWidth(true),
-                        GUILayout.MinWidth(ModScreenMinWidth),
-                        GUILayout.MaxWidth(ModScreenMaxWidth),
-                        GUILayout.ExpandHeight(true),
-                        GUILayout.MinHeight(ModScreenMinHeight),
-                        GUILayout.MaxHeight(ModScreenMaxHeight));
-                }
+                    ToggleShowUI(1);
+                }               
             }
         }
 
