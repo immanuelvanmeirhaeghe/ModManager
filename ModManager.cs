@@ -21,7 +21,7 @@ namespace ModManager
     /// who would like to be able to use ModAPI mods in multiplayer when not being host.
     /// Press Alpha0 (default) or the key configurable in ModAPI to open the main mod screen.
     /// </summary>
-    public class ModManager : MonoBehaviour
+    public class ModManager : MonoBehaviour, IYesNoDialogOwner
     {
         private const string MpManagerText = "Multiplayer Manager";
         private static ModManager Instance;
@@ -98,6 +98,8 @@ namespace ModManager
             => IsHostInCoop && !ReplTools.IsPlayingAlone();
         public static bool Disable { get; set; } = false;
         public static List<P2PLobbyMemberInfo> CoopLobbyMembers { get; set; }
+        public static SessionJoinHelper SessionJoinHelperAtStart { get; set; }
+        public static bool CanJoinSessionAtStart { get; set; }
 
         public static string GetClientCommandToUseMods()
             => "!requestMods";
@@ -233,6 +235,8 @@ namespace ModManager
             onOptionToggled += ModManager_onOptionToggled;
             onPermissionValueChanged += ModManager_onPermissionValueChanged;
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
+            SessionJoinHelperAtStart = GreenHellGame.Instance.m_SessionJoinHelper;
+            CanJoinSessionAtStart = MainLevel.Instance.m_CanJoinSession;
             ConfigurableModList = GetModList();
             ShortcutKey = GetShortcutKey();
             SetNewChatRequestId();
@@ -321,7 +325,7 @@ namespace ModManager
             ShowHUDBigInfo(
                 FlagStateChangedMessage(optionValue, optionText));
 
-            if (IsHostWithPlayersInCoop && PlayerCount > 0)
+            if (IsHostWithPlayersInCoop && CoopPlayerList != null && CoopPlayerList.Count > 0)
             {
                 P2PSession.Instance.SendTextChatMessage(FlagStateChangedMessage(optionValue, optionText));
             }
@@ -433,6 +437,7 @@ namespace ModManager
             LocalCursorManager = CursorManager.Get();         
             LocalMainMenuManager = MainMenuManager.Get();
             CoopPlayerList = P2PSession.Instance.m_RemotePeers?.ToList();
+            
         }
 
         private void InitSkinUI()
@@ -585,7 +590,7 @@ namespace ModManager
         {
             try
             {
-                if (!string.IsNullOrEmpty(SelectedPlayerName) && CoopLobbyMembers != null)
+                if (!string.IsNullOrEmpty(SelectedPlayerName) && CoopPlayerList != null)
                 {
                     P2PPeer peerPlayerToChat = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
                     if (peerPlayerToChat != null)
@@ -928,6 +933,10 @@ namespace ModManager
             bool _switchPlayerVersusModeValue = SwitchPlayerVersusMode;
             SwitchPlayerVersusMode = GUILayout.Toggle(SwitchPlayerVersusMode, "Switch to PvP?", GUI.skin.toggle);
             ToggleModOption(_switchPlayerVersusModeValue, nameof(SwitchPlayerVersusMode));
+            if (_switchPlayerVersusModeValue != SwitchPlayerVersusMode)
+            {
+                ShowConfirmSwitchPvPDialog();
+            }          
         }
 
         public static void ToggleModOption(bool optionState, string optionName)
@@ -946,9 +955,7 @@ namespace ModManager
 
             if (optionName == nameof(SwitchPlayerVersusMode) && optionState != SwitchPlayerVersusMode)
             {
-                SaveGameOnSwitch();
                 onOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
-                SwitchGameMode();
             }
         }
 
@@ -960,18 +967,30 @@ namespace ModManager
                 GreenHellGame.Instance.m_Settings.m_GameVisibility = SwitchPlayerVersusMode == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
                 if (SwitchPlayerVersusMode && ReplTools.IsCoopEnabled())
                 {
-                    GreenHellGame.Instance.m_SessionJoinHelper = new SessionJoinHelper();
+                    GreenHellGame.Instance.m_SessionJoinHelper = SessionJoinHelperAtStart ?? new SessionJoinHelper();
+                    GreenHellGame.Instance.m_GHGameMode = GameMode.PVE;
+
+                    MainLevel.Instance.m_CanJoinSession = CanJoinSessionAtStart;
+                    MainLevel.Instance.m_Tutorial = false;
                     MainLevel.Instance.m_GameMode = GameMode.PVE;
+
                     P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Friends);
                     P2PSession.Instance.Start();
+
                     MainLevel.Instance.StartLevel();
                 }
                 else
                 {
-                    GreenHellGame.Instance.m_SessionJoinHelper = null;
+                    GreenHellGame.Instance.m_SessionJoinHelper = SessionJoinHelperAtStart ?? new SessionJoinHelper();
+                    GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
+
+                    MainLevel.Instance.m_CanJoinSession = CanJoinSessionAtStart;
+                    MainLevel.Instance.m_Tutorial = false;
                     MainLevel.Instance.m_GameMode = GameModeAtStart;
+
                     P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Singleplayer);
                     P2PSession.Instance.Start(null);
+
                     MainLevel.Instance.StartLevel();
                 }               
             }
@@ -1002,24 +1021,6 @@ namespace ModManager
             }
         }
 
-        private void ReloadLobby()
-        {
-            try
-            {
-                ShowHUDBigInfo(HUDBigInfoMessage($"Reloading lobby...", MessageType.Info, Color.green));
-                ReadOnlyCollection<P2PLobbyMemberInfo> hostedLobbyMemberInfo = P2PTransportLayer.Instance.GetCurrentLobbyMembers();
-                if (hostedLobbyMemberInfo != null)
-                {
-                    P2PSession.Instance.UpdateDefaultRespawnPosition(LocalPlayer.GetWorldPosition());
-                    P2PSession.Instance.Restart();
-                }
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(ReloadLobby));
-            }
-        }
-
         private void OnClickRequestModsButton()
         {
             try
@@ -1040,13 +1041,54 @@ namespace ModManager
         }
 
         private static void HandleException(Exception exc, string methodName)
-        {
-            string info = $"[{ModName}:{methodName}] throws exception:" +
-                $"{exc.Message}\n" +
+        {           
+            string info =
+                $"[{ModName}:{methodName}] throws exception: {exc?.Message}\n" +
                 $"{exc?.StackTrace}\n" +
-                $"{exc?.InnerException}\n";
+                $"{exc?.InnerException}\n" +
+                $"Source: {exc?.Source}\n" +
+                $"{exc?.InnerException?.InnerException?.Message}\n";
             ModAPI.Log.Write(info);
             Debug.Log(info);
+        }
+
+        private void ShowConfirmSwitchPvPDialog()
+        {
+            try
+            {
+                EnableCursor(true);
+                string description = $"Are you sure you want to switch to  {(SwitchPlayerVersusMode == true ? "multiplayer?  Your current game will first be saved, if possible.\n" : "singleplayer? Your current game and of coop players' games will first be saved, if possible.\n")}\n";
+                YesNoDialog switchYesNoDialog = GreenHellGame.GetYesNoDialog();
+                switchYesNoDialog.Show(this, DialogWindowType.YesNo, $"{ModName} Info", description, true, false);
+                switchYesNoDialog.gameObject.SetActive(true);
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(ShowConfirmSwitchPvPDialog));
+            }
+        }
+
+        public void OnYesFromDialog()
+        {
+            SaveGameOnSwitch();
+            SwitchGameMode();
+            EnableCursor(false);
+        }
+
+        public void OnNoFromDialog()
+        {
+         
+            EnableCursor(false);
+        }
+
+        public void OnOkFromDialog()
+        {
+            OnYesFromDialog();
+        }
+
+        public void OnCloseDialog()
+        {
+            EnableCursor(false);
         }
     }
 }
