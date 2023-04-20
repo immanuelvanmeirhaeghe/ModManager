@@ -28,7 +28,7 @@ namespace ModManager
         private static readonly string RuntimeConfiguration = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), $"{nameof(RuntimeConfiguration)}.xml");
       
         private static readonly string ModName = nameof(ModManager);
-        private static readonly float ModScreenTotalWidth = 500f;
+        private static float ModScreenTotalWidth = 500f;
         private static readonly float ModScreenTotalHeight = 500f;
         private static readonly float ModScreenMinWidth = 500f;
         private static readonly float ModScreenMaxWidth = Screen.width;
@@ -37,7 +37,8 @@ namespace ModManager
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
         private static float ModMpScreenStartPositionX { get; set; } = Screen.width / 2.5f;
-        private static float ModMpScreenStartPositionY { get; set; } = Screen.height / 2.5f;       
+        private static float ModMpScreenStartPositionY { get; set; } = Screen.height / 2.5f;
+        public float ModMpScreenTotalWidth { get; private set; }
         private static bool IsMinimized { get; set; } = false;
 
         private static CursorManager LocalCursorManager;
@@ -101,6 +102,7 @@ namespace ModManager
         public static List<P2PLobbyMemberInfo> CoopLobbyMembers { get; set; }
         public static SessionJoinHelper SessionJoinHelperAtStart { get; set; }
         public static bool CanJoinSessionAtStart { get; set; }
+        public bool IsMpMinimized { get; private set; }
 
         public static string GetClientCommandToUseMods()
             => "!requestMods";
@@ -343,7 +345,7 @@ namespace ModManager
 
             if (Input.GetKey(KeyCode.Escape) && Input.GetKeyDown(ShortcutKey))
             {
-                CloseWindow();
+                CloseWindow(2);
             }
         }
 
@@ -398,7 +400,7 @@ namespace ModManager
                                                GetHashCode(),
                                                 ModManagerScreen,
                                                 InitModManagerScreen,
-                                                $"{ModName} by [Dragon Legion] Immaanuel#4300",
+                                                $"{ModName} created by [Dragon Legion] Immaanuel#4300",
                                                 GUI.skin.window,
                                                 GUILayout.ExpandWidth(true),
                                                 GUILayout.MinWidth(ModScreenMinWidth),
@@ -439,11 +441,21 @@ namespace ModManager
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void CloseWindow()
+        private void CloseWindow(int wid)
         {
-            ShowUI = false;
-            ShowMpMngr = false;
-        
+            if (wid == 0)
+            {
+                ShowUI = false;
+            }
+            if (wid == 1)
+            {
+                ShowMpMngr = false;
+            }
+            if (wid == 2)
+            {
+                ShowUI = false;
+                ShowMpMngr = false;
+            }
             EnableCursor(false);
         }
 
@@ -467,7 +479,7 @@ namespace ModManager
         {
             ModScreenStartPositionX = ModManagerScreen.x;
             ModScreenStartPositionY = ModManagerScreen.y;
-
+            ModMpScreenTotalWidth = ModManagerScreen.width;
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ScreenMenuBox();
@@ -491,9 +503,11 @@ namespace ModManager
         {
             ModMpScreenStartPositionX = ModMpMngrScreen.x;
             ModMpScreenStartPositionY = ModMpMngrScreen.y;
+            ModMpScreenTotalWidth = ModMpMngrScreen.width;
 
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
+                MpScreenMenuBox();
                 if (GUILayout.Button("Multiplayer Info", GUI.skin.button))
                 {
                     ToggleShowUI(3);
@@ -780,7 +794,7 @@ namespace ModManager
 
                 RequestInfoShownOption();
                 
-                SwitchPlayerVersusModeOption();
+                SwitchGameModeOption();
                 
                 if (GUILayout.Button("Game Info", GUI.skin.button))
                 {
@@ -910,7 +924,21 @@ namespace ModManager
             }
             if (GUI.Button(new Rect(ModManagerScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
             {
-                CloseWindow();
+                CloseWindow(0);
+            }
+        }
+
+        private void MpScreenMenuBox()
+        {
+            string collapseButtonText = IsMpMinimized ? "O" : "-";
+
+            if (GUI.Button(new Rect(ModMpMngrScreen.width - 40f, 0f, 20f, 20f), collapseButtonText, GUI.skin.button))
+            {
+                CollapseMpWindow();
+            }
+            if (GUI.Button(new Rect(ModMpMngrScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
+            {
+                CloseWindow(1);
             }
         }
 
@@ -918,6 +946,7 @@ namespace ModManager
         {
             ModScreenStartPositionX = ModManagerScreen.x;
             ModScreenStartPositionY = ModManagerScreen.y;
+            ModScreenTotalWidth = ModManagerScreen.width;
 
             if (!IsMinimized)
             {
@@ -928,6 +957,25 @@ namespace ModManager
             {
                 ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
                 IsMinimized = false;
+            }
+            InitWindow();
+        }
+
+        private void CollapseMpWindow()
+        {
+            ModMpScreenStartPositionX = ModMpMngrScreen.x;
+            ModMpScreenStartPositionY = ModMpMngrScreen.y;
+            ModMpScreenTotalWidth = ModMpMngrScreen.width;
+
+            if (!IsMpMinimized)
+            {
+                ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModScreenMinHeight);
+                IsMpMinimized = true;
+            }
+            else
+            {
+                ModManagerScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModScreenTotalHeight);
+                IsMpMinimized = false;
             }
             InitWindow();
         }
@@ -953,12 +1001,12 @@ namespace ModManager
             ToggleModOption(_requestInfoShownValue, nameof(RequestInfoShown));
         }
 
-        private void SwitchPlayerVersusModeOption()
+        private void SwitchGameModeOption()
         {
-            bool _switchPlayerVersusModeValue = GameModeSwitched;
-            GameModeSwitched = GUILayout.Toggle(GameModeSwitched, "Switch to PvP?", GUI.skin.toggle);
-            ToggleModOption(_switchPlayerVersusModeValue, nameof(GameModeSwitched));
-            if (_switchPlayerVersusModeValue != GameModeSwitched)
+            bool _GameModeSwitched = GameModeSwitched;
+            GameModeSwitched = GUILayout.Toggle(GameModeSwitched, "Switch to Multiplayer?", GUI.skin.toggle);
+            ToggleModOption(_GameModeSwitched, nameof(GameModeSwitched));
+            if (_GameModeSwitched != GameModeSwitched)
             {
                 ShowConfirmSwitchGameModeDialog();
             }          
