@@ -14,6 +14,9 @@
 
             ModManager.AllowModsAndCheatsForMultiplayer = optionValue;
             ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+
+            ModManager.EnableDebugMode = optionValue;
+            ModManager.ToggleModOption(optionValue, nameof(ModManager.EnableDebugMode));
         }
 
         protected override void Awake()
@@ -35,15 +38,31 @@
             ReplicatedLogicalPlayer playerComponent = ReplicatedPlayerHelpers.GetPlayerComponent<ReplicatedLogicalPlayer>(l_P2PPeer);
             bool isMaster = l_P2PPeer.IsMaster();
             string p2pPeerName = l_P2PPeer.GetDisplayName();
+            bool flag1 = ModManager.AllowModsAndCheatsForMultiplayer;
+            bool flag2 = ModManager.EnableDebugMode;
 
-            if (textMessage == ModManager.HostCommandToAllowModsWithRequestId())
+            if (textMessage.ToLowerInvariant() == ModManager.HostCommandToAllowModsWithRequestId().ToLowerInvariant() || 
+                textMessage.ToLowerInvariant() == ModManager.HostCommandToEnableDebugWithRequestId().ToLowerInvariant())
             {
                 if (isMaster)
                 {
-                    ModManager.AllowModsAndCheatsForMultiplayer = true;
-                    ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
-                    StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
-                    ModManager.SetNewChatRequestId();
+                    if(textMessage.ToLowerInvariant() == ModManager.HostCommandToAllowModsWithRequestId().ToLowerInvariant())
+                    {
+                        ModManager.AllowModsAndCheatsForMultiplayer = true;
+                        ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+                        StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
+                    }
+                    if (textMessage.ToLowerInvariant() == ModManager.HostCommandToEnableDebugWithRequestId().ToLowerInvariant())
+                    {
+                        ModManager.EnableDebugMode = true;
+                        ModManager.ToggleModOption(true, nameof(ModManager.EnableDebugMode));
+                        StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use Debug Mode has been"));
+                    }
+
+                    if (flag1 && flag2)
+                    {
+                        ModManager.SetNewChatRequestId();
+                    }
                 }
                 else
                 {

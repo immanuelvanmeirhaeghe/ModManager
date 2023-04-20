@@ -25,7 +25,7 @@ namespace ModManager
     {
         private const string MpManagerText = "Multiplayer Manager";
         private static ModManager Instance;
-        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
+        private static readonly string RuntimeConfiguration = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), $"{nameof(RuntimeConfiguration)}.xml");
       
         private static readonly string ModName = nameof(ModManager);
         private static readonly float ModScreenTotalWidth = 500f;
@@ -82,10 +82,11 @@ namespace ModManager
         public int SelectedModIDIndex { get; set; } = 0;
         public string SelectedModID { get; set; } = string.Empty;
         public IConfigurableMod SelectedMod { get; set; } = default;
-        public static bool SwitchPlayerVersusMode { get; set; } = false;
+        public static bool GameModeSwitched { get; set; } = false;
         public static bool RequestInfoShown { get; set; } = false;
         public static int RequestsSendToHost { get; set; } = 0;
-     
+
+        public static bool EnableDebugMode { get; set; } = false;
         public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
@@ -104,8 +105,14 @@ namespace ModManager
         public static string GetClientCommandToUseMods()
             => "!requestMods";
 
+        public static string GetClientCommandToUseDebugMode()
+            => "!requestDebug";
+
         public static string GetHostCommandToAllowMods(float chatRequestId)
             => $"!allowMods{chatRequestId}";
+
+        public static string GetHostCommandToEnableDebug(float chatRequestId)
+         => $"!allowDebug{chatRequestId}";
 
         public static string GetClientPlayerName()
             => ReplTools.GetLocalPeer().GetDisplayName();
@@ -121,7 +128,10 @@ namespace ModManager
         public static string HostCommandToAllowModsWithRequestId()
             => GetHostCommandToAllowMods(ChatRequestId);
 
-        public string ClientSystemInfoChatMessage(string command, Color? color = null)
+        public static string HostCommandToEnableDebugWithRequestId()
+            => GetHostCommandToEnableDebug(ChatRequestId);
+
+        public static string ClientSystemInfoChatMessage(string command, Color? color = null)
             => SystemInfoChatMessage(
                 $"Send <b><color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.cyan))}>{command}</color></b> to request permission to use mods.",
                 color);
@@ -133,7 +143,7 @@ namespace ModManager
             + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Be aware that this can be used for griefing!</color>",
                 color);
 
-        public string RequestWasSentMessage(Color? color = null)
+        public static string RequestWasSentMessage(Color? color = null)
             => SystemInfoChatMessage(
                 $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>",
                 color);
@@ -253,9 +263,9 @@ namespace ModManager
             List<IConfigurableMod> modList = new List<IConfigurableMod>();
             try
             {
-                if (File.Exists(RuntimeConfigurationFile))
+                if (File.Exists(RuntimeConfiguration))
                 {
-                    using (XmlReader configFileReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
+                    using (XmlReader configFileReader = XmlReader.Create(new StreamReader(RuntimeConfiguration)))
                     {
                         while (configFileReader.Read())
                         {
@@ -300,35 +310,19 @@ namespace ModManager
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
         {
-            Cheats.m_OneShotAI = optionValue;
-            Cheats.m_OneShotConstructions = optionValue;
-            Cheats.m_GhostMode = optionValue;
-            Cheats.m_GodMode = optionValue;
-            Cheats.m_ImmortalItems = optionValue;
-
-            GreenHellGame.DEBUG = optionValue;
-            IsModActiveForMultiplayer = optionValue;
-            if (optionValue)
+            if (!optionValue)
             {
-                GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
-                MainLevel.Instance.m_GameMode = GameMode.Debug;
-            }
-            else
-            {
-                GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
-                MainLevel.Instance.m_GameMode = GameModeAtStart;               
+                Cheats.m_OneShotAI = optionValue;
+                Cheats.m_OneShotConstructions = optionValue;
+                Cheats.m_GhostMode = optionValue;
+                Cheats.m_GodMode = optionValue;
+                Cheats.m_ImmortalItems = optionValue;
             }
         }
 
         private void ModManager_onOptionToggled(bool optionValue, string optionText)
         {
-            ShowHUDBigInfo(
-                FlagStateChangedMessage(optionValue, optionText));
-
-            if (IsHostWithPlayersInCoop && CoopPlayerList != null && CoopPlayerList.Count > 0)
-            {
-                P2PSession.Instance.SendTextChatMessage(FlagStateChangedMessage(optionValue, optionText));
-            }
+            ShowHUDBigInfo(FlagStateChangedMessage(optionValue, optionText));
         }
 
         private void Update()
@@ -777,7 +771,13 @@ namespace ModManager
                 }
 
                 AllowModsAndCheatsOption();
-                
+                if (AllowModsAndCheatsForMultiplayer)
+                {
+                    CheatOptionsBox();
+                }
+
+                EnableDebugModeOption();
+
                 RequestInfoShownOption();
                 
                 SwitchPlayerVersusModeOption();
@@ -791,6 +791,22 @@ namespace ModManager
                 
                     GameInfoBox();
                 }
+            }
+        }
+
+        private void CheatOptionsBox()
+        {
+            using (var optscheatsHScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                GUI.color = Color.cyan;
+                GUILayout.Label($"Cheat options:", GUI.skin.label);
+                GUI.color = DefaultColor;
+
+                Cheats.m_OneShotAI = GUILayout.Toggle(Cheats.m_OneShotAI, "One shot AI cheat on / off?", GUI.skin.toggle);
+                Cheats.m_OneShotConstructions = GUILayout.Toggle(Cheats.m_OneShotAI, "One shot AI cheat on / off?", GUI.skin.toggle);
+                Cheats.m_GhostMode = GUILayout.Toggle(Cheats.m_GhostMode, "Ghost mode cheat on / off?", GUI.skin.toggle);
+                Cheats.m_GodMode = GUILayout.Toggle(Cheats.m_GodMode, "God mode cheat on / off?", GUI.skin.toggle);
+                Cheats.m_ImmortalItems = GUILayout.Toggle(Cheats.m_ImmortalItems, "No item decay cheat on / off?", GUI.skin.toggle);
             }
         }
 
@@ -830,8 +846,10 @@ namespace ModManager
                 GUILayout.Label($"{nameof(PlayerCount)}: {PlayerCount}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsHostManager)}: { (IsHostManager ? "enabled" : "disabled"  )}", GUI.skin.label);
                 GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}: {( IsHostWithPlayersInCoop ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}: {(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);
+                GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}: {(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);                
                 GUILayout.Label($"Host command to allow mods for multiplayer: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
+                GUILayout.Label($"{nameof(EnableDebugMode)}: {(EnableDebugMode ? "enabled" : "disabled")}", GUI.skin.label);
+                GUILayout.Label($"Host command to enable Debug Mode for multiplayer: {HostCommandToEnableDebugWithRequestId()}", GUI.skin.label);
             }
         }
 
@@ -921,6 +939,13 @@ namespace ModManager
             ToggleModOption(_allowModsAndCheatsForMultiplayerValue, nameof(AllowModsAndCheatsForMultiplayer));
         }
 
+        private void EnableDebugModeOption()
+        {
+            bool _EnableDebugMode = EnableDebugMode;
+            EnableDebugMode = GUILayout.Toggle(EnableDebugMode, "Enable Debug Mode for multiplayer?", GUI.skin.toggle);
+            ToggleModOption(_EnableDebugMode, nameof(EnableDebugMode));
+        }
+
         private void RequestInfoShownOption()
         {
             bool _requestInfoShownValue = RequestInfoShown;
@@ -930,19 +955,37 @@ namespace ModManager
 
         private void SwitchPlayerVersusModeOption()
         {
-            bool _switchPlayerVersusModeValue = SwitchPlayerVersusMode;
-            SwitchPlayerVersusMode = GUILayout.Toggle(SwitchPlayerVersusMode, "Switch to PvP?", GUI.skin.toggle);
-            ToggleModOption(_switchPlayerVersusModeValue, nameof(SwitchPlayerVersusMode));
-            if (_switchPlayerVersusModeValue != SwitchPlayerVersusMode)
+            bool _switchPlayerVersusModeValue = GameModeSwitched;
+            GameModeSwitched = GUILayout.Toggle(GameModeSwitched, "Switch to PvP?", GUI.skin.toggle);
+            ToggleModOption(_switchPlayerVersusModeValue, nameof(GameModeSwitched));
+            if (_switchPlayerVersusModeValue != GameModeSwitched)
             {
-                ShowConfirmSwitchPvPDialog();
+                ShowConfirmSwitchGameModeDialog();
             }          
         }
 
         public static void ToggleModOption(bool optionState, string optionName)
         {
+            if (optionName == nameof(EnableDebugMode) && optionState != EnableDebugMode)
+            {
+                if (optionState)
+                {
+                    GreenHellGame.DEBUG = true;
+                    GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
+                    MainLevel.Instance.m_GameMode = GameMode.Debug;
+                }
+                else
+                {
+                    GreenHellGame.DEBUG = false;
+                    GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
+                    MainLevel.Instance.m_GameMode = GameModeAtStart;
+                }
+                onOptionToggled?.Invoke(EnableDebugMode, $"Using Debug Mode has been");               
+            }
+
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
             {
+                Instance.IsModActiveForMultiplayer = optionState;
                 onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Using mods and cheats has been");
                 onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
             }
@@ -953,9 +996,9 @@ namespace ModManager
                 RequestsSendToHost = 0;
             }
 
-            if (optionName == nameof(SwitchPlayerVersusMode) && optionState != SwitchPlayerVersusMode)
+            if (optionName == nameof(GameModeSwitched) && optionState != GameModeSwitched)
             {
-                onOptionToggled?.Invoke(SwitchPlayerVersusMode, $"PvP mode has been");
+                onOptionToggled?.Invoke(GameModeSwitched, $"Multiplayer mode has been");
             }
         }
 
@@ -963,9 +1006,8 @@ namespace ModManager
         {
             try
             {
-                LocalMainMenuManager = MainMenuManager.Get();
-                GreenHellGame.Instance.m_Settings.m_GameVisibility = SwitchPlayerVersusMode == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
-                if (SwitchPlayerVersusMode && ReplTools.IsCoopEnabled())
+                GreenHellGame.Instance.m_Settings.m_GameVisibility = GameModeSwitched == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
+                if (GameModeSwitched && ReplTools.IsCoopEnabled())
                 {
                     GreenHellGame.Instance.m_SessionJoinHelper = SessionJoinHelperAtStart ?? new SessionJoinHelper();
                     GreenHellGame.Instance.m_GHGameMode = GameMode.PVE;
@@ -1052,19 +1094,19 @@ namespace ModManager
             Debug.Log(info);
         }
 
-        private void ShowConfirmSwitchPvPDialog()
+        private void ShowConfirmSwitchGameModeDialog()
         {
             try
             {
                 EnableCursor(true);
-                string description = $"Are you sure you want to switch to  {(SwitchPlayerVersusMode == true ? "multiplayer?  Your current game will first be saved, if possible.\n" : "singleplayer? Your current game and of coop players' games will first be saved, if possible.\n")}\n";
+                string description = $"Are you sure you want to switch to  {(GameModeSwitched == true ? "multiplayer?  Your current game will first be saved, if possible.\n" : "singleplayer? Your current game and of coop players' games will first be saved, if possible.\n")}\n";
                 YesNoDialog switchYesNoDialog = GreenHellGame.GetYesNoDialog();
                 switchYesNoDialog.Show(this, DialogWindowType.YesNo, $"{ModName} Info", description, true, false);
                 switchYesNoDialog.gameObject.SetActive(true);
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(ShowConfirmSwitchPvPDialog));
+                HandleException(exc, nameof(ShowConfirmSwitchGameModeDialog));
             }
         }
 

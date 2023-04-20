@@ -11,8 +11,8 @@ namespace ModManager.Extensions
             if (!ModManager.RequestInfoShown)
             {
                 ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));
-                GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowModsAndCheatsForMultiplayer) && !ModManager.Disable;
-                m_History.StoreMessage(ModManager.Get().ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseMods()));
+                GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.EnableDebugMode) && !ModManager.Disable;
+                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseMods()));
             }
             base.OnShow();
             ModManager.Disable = true;
@@ -22,20 +22,38 @@ namespace ModManager.Extensions
         {
             base.OnHide();
             ModManager.Disable = false;
-            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowModsAndCheatsForMultiplayer) && !ModManager.Disable;
+            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.EnableDebugMode) && !ModManager.Disable;
         }
 
         protected override void SendTextMessage()
         {
             string fieldTextMessage = m_Field.text.Trim();
+            bool flag1 = ModManager.AllowModsAndCheatsForMultiplayer;
+            bool flag2 = ModManager.EnableDebugMode;
 
             if (fieldTextMessage.Length > 0)
             {
-                if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseMods().ToLower().Trim())
+                if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseMods().ToLower().Trim() ||
+                    fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseDebugMode().ToLower().Trim())
                 {
-                    ModManager.SetNewChatRequestId();
-                    P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.ChatRequestId)));
-                    m_History.StoreMessage(ModManager.Get().RequestWasSentMessage());
+                    if (flag1 && flag2)
+                    {
+                        ModManager.SetNewChatRequestId();
+                    }
+
+                    if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseMods().ToLower().Trim())
+                    {
+                        P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.ChatRequestId)));
+
+                        m_History.StoreMessage(ModManager.RequestWasSentMessage());
+                    }
+
+                    if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseDebugMode().ToLower().Trim())
+                    {
+                        P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToEnableDebug(ModManager.ChatRequestId)));
+
+                        m_History.StoreMessage(ModManager.RequestWasSentMessage());
+                    }                                    
                 }
                 else
                 {
