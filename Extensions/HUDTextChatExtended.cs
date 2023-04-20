@@ -8,21 +8,21 @@ namespace ModManager.Extensions
     {   
         protected override void OnShow()
         {
-            if (!ModManager.Get().RequestInfoShown)
+            if (!ModManager.RequestInfoShown)
             {
-                ModManager.Get().ToggleModOption(true, nameof(ModManager.RequestInfoShown));
-                GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.Get().AllowModsAndCheatsForMultiplayer) && !ModManager.Get().Disable;
-                m_History.StoreMessage(ModManager.Get().ClientSystemInfoChatMessage(ModManager.Get().GetClientCommandToUseMods()));
+                ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));
+                GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowModsAndCheatsForMultiplayer) && !ModManager.Disable;
+                m_History.StoreMessage(ModManager.Get().ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseMods()));
             }
             base.OnShow();
-            ModManager.Get().Disable = true;
+            ModManager.Disable = true;
         }
 
         protected override void OnHide()
         {
             base.OnHide();
-            ModManager.Get().Disable = false;
-            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.Get().AllowModsAndCheatsForMultiplayer) && !ModManager.Get().Disable;
+            ModManager.Disable = false;
+            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.AllowModsAndCheatsForMultiplayer) && !ModManager.Disable;
         }
 
         protected override void SendTextMessage()
@@ -31,10 +31,10 @@ namespace ModManager.Extensions
 
             if (fieldTextMessage.Length > 0)
             {
-                if (fieldTextMessage.ToLower().Trim() == ModManager.Get().GetClientCommandToUseMods().ToLower().Trim())
+                if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseMods().ToLower().Trim())
                 {
-                    ModManager.Get().SetNewChatRequestId();
-                    P2PSession.Instance.SendTextChatMessage(ModManager.Get().HostSystemInfoChatMessage(ModManager.Get().GetHostCommandToAllowMods(ModManager.Get().ChatRequestId)));
+                    ModManager.SetNewChatRequestId();
+                    P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.ChatRequestId)));
                     m_History.StoreMessage(ModManager.Get().RequestWasSentMessage());
                 }
                 else
@@ -44,7 +44,7 @@ namespace ModManager.Extensions
                     {
                         m_History.StoreMessage(
                                                                            fieldTextMessage,
-                                                                           ModManager.Get().GetClientPlayerName(),
+                                                                           ModManager.GetClientPlayerName(),
                                                                            ReplicatedLogicalPlayer.s_LocalLogicalPlayer ? ReplicatedLogicalPlayer.s_LocalLogicalPlayer.GetPlayerColor() : HUDTextChatHistory.NormalColor
                                                                         );
                     }

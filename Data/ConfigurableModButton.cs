@@ -1,8 +1,8 @@
-﻿using ModManager.Interfaces;
+﻿using ModManager.Data.Interfaces;
 using System.Reflection;
 using UnityEngine;
 
-namespace ModManager
+namespace ModManager.Data
 {
     /// <summary>
     /// Represents a base class

@@ -357,11 +357,11 @@
     <Compile Include="Extensions\HUDTextChatExtended.cs" />
     <Compile Include="Extensions\HUDTextChatHistoryExtended.cs" />
     <Compile Include="Extensions\PlayerExtended.cs" />
-    <Compile Include="Interfaces\IConfigurableMod.cs" />
-    <Compile Include="Libraries\ConfigurableMod.cs" />
-    <Compile Include="Libraries\ConfigurableModButton.cs" />
-    <Compile Include="Libraries\Enums.cs" />
-    <Compile Include="Interfaces\IConfigurableModButton.cs" />
+    <Compile Include="Data\Interfaces\IConfigurableMod.cs" />
+    <Compile Include="Data\ConfigurableMod.cs" />
+    <Compile Include="Data\ConfigurableModButton.cs" />
+    <Compile Include="Data\Enums.cs" />
+    <Compile Include="Data\Interfaces\IConfigurableModButton.cs" />
     <Compile Include="ModManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

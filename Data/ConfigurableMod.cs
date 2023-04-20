@@ -1,4 +1,4 @@
-﻿using ModManager.Interfaces;
+﻿using ModManager.Data.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace ModManager
+namespace ModManager.Data
 {
     /// <summary>
     /// Represents  a base class for a  mod 

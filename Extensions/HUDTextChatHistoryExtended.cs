@@ -9,11 +9,11 @@
 
         private void InitModManager(bool optionValue)
         {
-            ModManager.Get().RequestInfoShown = optionValue;
-            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
+            ModManager.RequestInfoShown = optionValue;
+            ModManager.ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
 
-            ModManager.Get().AllowModsAndCheatsForMultiplayer = optionValue;
-            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+            ModManager.AllowModsAndCheatsForMultiplayer = optionValue;
+            ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
         }
 
         protected override void Awake()
@@ -36,18 +36,18 @@
             bool isMaster = l_P2PPeer.IsMaster();
             string p2pPeerName = l_P2PPeer.GetDisplayName();
 
-            if (textMessage == ModManager.Get().HostCommandToAllowModsWithRequestId())
+            if (textMessage == ModManager.HostCommandToAllowModsWithRequestId())
             {
                 if (isMaster)
                 {
-                    ModManager.Get().AllowModsAndCheatsForMultiplayer = true;
-                    ModManager.Get().ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
-                    StoreMessage(ModManager.Get().FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
-                    ModManager.Get().SetNewChatRequestId();
+                    ModManager.AllowModsAndCheatsForMultiplayer = true;
+                    ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+                    StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
+                    ModManager.SetNewChatRequestId();
                 }
                 else
                 {
-                    StoreMessage(ModManager.Get().OnlyHostCanAllowMessage());
+                    StoreMessage(ModManager.OnlyHostCanAllowMessage());
                 }
             }
             else
