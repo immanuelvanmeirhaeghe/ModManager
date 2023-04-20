@@ -38,7 +38,9 @@ namespace ModManager
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
         private static float ModMpScreenStartPositionX { get; set; } = Screen.width / 2.5f;
         private static float ModMpScreenStartPositionY { get; set; } = Screen.height / 2.5f;
-        public float ModMpScreenTotalWidth { get; private set; }
+        public static float ModMpScreenTotalWidth { get; private set; }
+        private static readonly float ModMpScreenTotalHeight = 500f;
+        private static readonly float ModMpScreenMinHeight = 50f;
         private static bool IsMinimized { get; set; } = false;
 
         private static CursorManager LocalCursorManager;
@@ -57,7 +59,7 @@ namespace ModManager
         private bool ShowInfo = false;
 
         public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
-        public static Rect ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+        public static Rect ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenTotalHeight);
         public static KeyCode ShortcutKey { get; set; } = KeyCode.Alpha0;
         public static List<IConfigurableMod> ConfigurableModList { get; set; } = new List<IConfigurableMod>();
         public static List<P2PPeer> CoopPlayerList { get; set; } = default;
@@ -504,21 +506,23 @@ namespace ModManager
             ModMpScreenStartPositionX = ModMpMngrScreen.x;
             ModMpScreenStartPositionY = ModMpMngrScreen.y;
             ModMpScreenTotalWidth = ModMpMngrScreen.width;
-
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 MpScreenMenuBox();
-                if (GUILayout.Button("Multiplayer Info", GUI.skin.button))
+                if (!IsMpMinimized)
                 {
-                    ToggleShowUI(3);
+                    if (GUILayout.Button("Multiplayer Info", GUI.skin.button))
+                    {
+                        ToggleShowUI(3);
+                    }
+                    if (ShowMpInfo)
+                    {
+                        MultiplayerInfoBox();
+                    }
+                    PlayersScrollViewBox();
+                    SendTexMessagesBox();
+                    MpActionButtons();
                 }
-                if (ShowMpInfo)
-                {
-                    MultiplayerInfoBox();
-                }
-                PlayersScrollViewBox();
-                SendTexMessagesBox();
-                MpActionButtons();
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
@@ -969,12 +973,12 @@ namespace ModManager
 
             if (!IsMpMinimized)
             {
-                ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModScreenMinHeight);
+                ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenMinHeight);
                 IsMpMinimized = true;
             }
             else
             {
-                ModManagerScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModScreenTotalHeight);
+                ModManagerScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenTotalHeight);
                 IsMpMinimized = false;
             }
             InitWindow();
@@ -1016,15 +1020,14 @@ namespace ModManager
         {
             if (optionName == nameof(EnableDebugMode) && optionState != EnableDebugMode)
             {
+                GreenHellGame.DEBUG = optionState;
                 if (optionState)
                 {
-                    GreenHellGame.DEBUG = true;
                     GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
                     MainLevel.Instance.m_GameMode = GameMode.Debug;
                 }
                 else
                 {
-                    GreenHellGame.DEBUG = false;
                     GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
                     MainLevel.Instance.m_GameMode = GameModeAtStart;
                 }
