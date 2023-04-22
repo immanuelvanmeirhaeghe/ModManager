@@ -690,7 +690,7 @@ namespace ModManager
         {
             using (var textmsgViewScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
-                GUILayout.Label($"Type your message: ", GUI.skin.label , GUILayout.Width(50f));
+                GUILayout.Label($"Type your message: ", GUI.skin.label , GUILayout.Width(150f));
                 TextChatMessage = GUILayout.TextArea(TextChatMessage, GUI.skin.textArea);
             }
         }
@@ -794,7 +794,7 @@ namespace ModManager
                 {
                     ToggleShowUI(4);
                 }
-                if (ShowModInfo && SelectedMod != null)
+                if (ShowModInfo)
                 {
                   ModInfoBox();
                 }
@@ -1036,7 +1036,7 @@ namespace ModManager
             using (var optscheatsHScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUILayout.Label($"Cheat Options", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
-
+                
                 Cheats.m_OneShotAI = GUILayout.Toggle(Cheats.m_OneShotAI, "One shot AI cheat on / off?", GUI.skin.toggle);
                 Cheats.m_OneShotConstructions = GUILayout.Toggle(Cheats.m_OneShotConstructions, "One shot constructions cheat on / off?", GUI.skin.toggle);
                 Cheats.m_GhostMode = GUILayout.Toggle(Cheats.m_GhostMode, "Ghost mode cheat on / off?", GUI.skin.toggle);
@@ -1143,6 +1143,17 @@ namespace ModManager
        
                 GUILayout.Label($"{nameof(Cheats)}", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
 
+                using (var cheatsOSAIScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotAI)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_OneShotAI ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_OneShotAI));
+                }
+                using (var cheatsOSCScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotConstructions)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_OneShotConstructions ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_OneShotConstructions));
+                }
+               
                 using (var cheatsIBScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_InstantBuild)}: ", InfoFieldNameLabel);
@@ -1158,15 +1169,10 @@ namespace ModManager
                     GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GodMode)}: ", InfoFieldNameLabel);
                     GUILayout.Label($"{(Cheats.m_GodMode ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_GodMode));
                 }
-                using (var cheatsOSAIScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                using (var cheatsDecayScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotAI)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_OneShotAI ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_OneShotAI));
-                }
-                using (var cheatsOSCScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotConstructions)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_OneShotConstructions ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_OneShotConstructions));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_ImmortalItems)}: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_ImmortalItems ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_ImmortalItems));
                 }
 
                 GUILayout.EndScrollView();
