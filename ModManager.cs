@@ -29,25 +29,27 @@ namespace ModManager
       
         private static readonly string ModName = nameof(ModManager);
 
-        private static float ModScreenTotalWidth { get; set; } = 500f;
-        private static float ModScreenTotalHeight { get; set; } = 600f;
-        private static float ModScreenMinWidth { get; set; } = 500f;
-        private static float ModScreenMinHeight { get; set; } = 50f;
-        private static float ModScreenMaxWidth { get; set; } = Screen.width;
-        private static float ModScreenMaxHeight { get; set; } = Screen.height;
-        private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
-        private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
+        private static float ModManagerScreenTotalWidth { get; set; } = 500f;
+        private static float ModManagerScreenTotalHeight { get; set; } = 600f;
+        private static float ModManagerScreenMinWidth { get; set; } = 500f;
+        private static float ModManagerScreenMinHeight { get; set; } = 50f;
+        private static float ModManagerScreenMaxWidth { get; set; } = Screen.width;
+        private static float ModManagerScreenMaxHeight { get; set; } = Screen.height;
+        private static float ModManagerScreenStartPositionX { get; set; } = Screen.width / 2f;
+        private static float ModManagerScreenStartPositionY { get; set; } = Screen.height / 2f;
         private static bool IsMinimized { get; set; } = false;
-              
-        private static float ModMpScreenTotalWidth { get; set; } = 500f;
-        private static float ModMpScreenTotalHeight { get; set; } = 600f;
-        private static float ModMpScreenMinWidth { get; set; } = 500f;        
-        private static float ModMpScreenMinHeight { get; set; } = 50f;
-        private static float ModMpScreenMaxWidth { get; set; } = Screen.width;
-        private static float ModMpScreenMaxHeight { get; set; } = Screen.height;
-        private static float ModMpScreenStartPositionX { get; set; } = Screen.width / 2.5f;
-        private static float ModMpScreenStartPositionY { get; set; } = Screen.height / 2.5f;
+        private static int ModManagerScreenId { get; set; } = -2;
+
+        private static float ModMpMngrScreenTotalWidth { get; set; } = 500f;
+        private static float ModMpMngrScreenTotalHeight { get; set; } = 600f;
+        private static float ModMpMngrScreenMinWidth { get; set; } = 500f;        
+        private static float ModMpMngrScreenMinHeight { get; set; } = 50f;
+        private static float ModMpMngrScreenMaxWidth { get; set; } = Screen.width;
+        private static float ModMpMngrScreenMaxHeight { get; set; } = Screen.height;
+        private static float ModMpMngrScreenStartPositionX { get; set; } = Screen.width / 2.5f;
+        private static float ModMpMngrScreenStartPositionY { get; set; } = Screen.height / 2.5f;
         private static bool IsMpMinimized { get; set; }
+        private static int ModMpMngrScreenId { get; set; } = -1;
 
         private static CursorManager LocalCursorManager;
         private static HUDManager LocalHUDManager;
@@ -55,24 +57,21 @@ namespace ModManager
 
         private Color DefaultColor = GUI.color;
 
-        private bool ShowUI = false;
+        private bool ShowModManagerScreen = false;
         private bool ShowGameInfo = false;
         private bool ShowMpInfo = false;
-        private bool ShowMpMngr = false;
+        private bool ShowModMpMngrScreen = false;
         private bool ShowModInfo = false;
         private bool ShowInfo = false;
+        private bool ShowModList =false;
 
-        public static Rect ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
-        public static Rect ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenTotalHeight);
+        public static Rect ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenTotalHeight);
+        public static Rect ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
         public static KeyCode ShortcutKey { get; set; } = KeyCode.Alpha0;
         public static List<IConfigurableMod> ConfigurableModList { get; set; } = new List<IConfigurableMod>();
-        public static List<P2PPeer> CoopPlayerList { get; set; } = default;
-       
-        public static int ChatRequestId { get; set; } 
-        public string LocalHostDisplayName { get; set; } = string.Empty;
-        public static GameMode GameModeAtStart { get; set; } = GameMode.None;
-        public string SteamAppId  => GreenHellGame.s_SteamAppId.m_AppId.ToString();
-        public int PlayerCount => P2PSession.Instance.GetRemotePeerCount();
+        public static List<P2PPeer> CoopPlayerList { get; set; } = default;       
+        public static int ChatRequestId { get; set; }     
+        public static GameMode GameModeAtStart { get; set; } = GameMode.None;      
 
         public static EventID PermissionChanged { get; set; } = EventID.NoneEnabled;
         public delegate void OnPermissionValueChanged(bool optionValue);
@@ -80,23 +79,22 @@ namespace ModManager
         public delegate void OnOptionToggled(bool optionValue, string optionText);
         public static event OnOptionToggled onOptionToggled;
 
+        public string LocalHostDisplayName { get; set; } = string.Empty;
         public string TextChatMessage { get; set; } = string.Empty;
-
+        public string SteamAppId => GreenHellGame.s_SteamAppId.m_AppId.ToString();
+        public int PlayerCount => P2PSession.Instance.GetRemotePeerCount();
         public Vector2 PlayerListScrollViewPosition { get; set; } = default;
         public string SelectedPlayerName { get; set; } = string.Empty;
         public int SelectedPlayerIndex { get; set; } = 0;
 
         public Vector2 ModListScrollViewPosition { get; set; } = default;
+        public Vector2 GameInfoScrollViewPosition { get; set; } = default;
+        public Vector2 ModInfoScrollViewPosition { get; set; } = default;
+
         public int SelectedModIDIndex { get; set; } = 0;
         public string SelectedModID { get; set; } = string.Empty;
         public IConfigurableMod SelectedMod { get; set; } = default;
-
-        public static bool GameModeSwitched { get; set; } = false;
-        public static bool RequestInfoShown { get; set; } = false;
-        public static int RequestsSendToHost { get; set; } = 0;
-
-        public static bool EnableDebugMode { get; set; } = false;
-        public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
+        public bool IsMultiplayerGameModeActive { get; set; } = false;
 
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
@@ -111,6 +109,32 @@ namespace ModManager
         public static List<P2PLobbyMemberInfo> CoopLobbyMembers { get; set; }
         public static SessionJoinHelper SessionJoinHelperAtStart { get; set; }
         public static bool CanJoinSessionAtStart { get; set; }
+        
+        public static bool RequestInfoShown { get; set; } = false;
+        public static int RequestsSendToHost { get; set; } = 0;
+        public static bool EnableDebugMode { get; set; } = false;
+        public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
+
+        public GUIStyle InfoHeaderLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            fontSize = 10             
+        };
+        public GUIStyle InfoFieldNameLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontSize = 8,
+            fixedWidth = 150f,
+            wordWrap = true
+        };
+        public GUIStyle InfoFieldValueLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleRight,
+            fontSize = 8,
+            fixedWidth = 250f,
+            wordWrap = true
+        };
 
         public static string OnlyForSinglePlayerOrHostMessage() 
             => $"Only available for single player or when host. Host {GetHostPlayerName()} can activate using {ModName}.";
@@ -357,13 +381,13 @@ namespace ModManager
         {
             if (Input.GetKeyDown(ShortcutKey))
             {
-                if (!ShowUI)
+                if (!ShowModManagerScreen)
                 {
                     InitData();
                     EnableCursor(blockPlayer: true);
                 }
                 ToggleShowUI(0);
-                if (!ShowUI)
+                if (!ShowModManagerScreen)
                 {
                     EnableCursor(blockPlayer: false);
                 }
@@ -375,10 +399,10 @@ namespace ModManager
             switch (controlId)
             {
                 case 0:
-                    ShowUI = !ShowUI;
+                    ShowModManagerScreen = !ShowModManagerScreen;
                     break;
                 case 1:
-                    ShowMpMngr = !ShowMpMngr;
+                    ShowModMpMngrScreen = !ShowModMpMngrScreen;
                     break;
                 case 2:
                     ShowGameInfo = !ShowGameInfo;
@@ -392,16 +416,20 @@ namespace ModManager
                 case 5:
                     ShowInfo = !ShowInfo;
                     break;
+                case 6:
+                    ShowModList = !ShowModList;
+                    break;
                 default:
-                    ShowUI = !ShowUI;
-                    ShowMpMngr = !ShowMpMngr;
+                    ShowModManagerScreen = !ShowModManagerScreen;
+                    ShowModMpMngrScreen = !ShowModMpMngrScreen;
                     ShowGameInfo = !ShowGameInfo;
                     ShowMpInfo = !ShowMpInfo;
                     ShowModInfo = !ShowModInfo;
                     ShowInfo = !ShowInfo;
+                    ShowModList = !ShowModList;
                     break;
             }
-            if (!ShowUI && !ShowMpMngr)
+            if (!ShowModManagerScreen && !ShowModMpMngrScreen)
             {
                 EnableCursor(false);
             }
@@ -413,46 +441,59 @@ namespace ModManager
 
         private void OnGUI()
         {
-            if (ShowUI || ShowMpMngr)
+            if (ShowModManagerScreen || ShowModMpMngrScreen)
             {
                 InitData();
                 InitSkinUI();
-                InitWindow();
-            }
+                if (ShowModManagerScreen)
+                {
+                    InitModManagerScreen();
+                }
+                if (ShowModMpMngrScreen)
+                {
+                    InittModMpMngrScreen();
+                }
+            }           
         }
 
-        private void InitWindow()
+        private void InitModManagerScreen()
         {
-            if (ShowUI)
+            if (ModManagerScreenId < 0 || ModManagerScreenId == ModMpMngrScreenId)
             {
-                ModManagerScreen = GUILayout.Window(
-                                               GetHashCode(),
-                                                ModManagerScreen,
-                                                InitModManagerScreen,
-                                                $"{ModName} created by [Dragon Legion] Immaanuel#4300",
-                                                GUI.skin.window,
-                                                GUILayout.ExpandWidth(true),
-                                                GUILayout.MinWidth(ModScreenMinWidth),
-                                                GUILayout.MaxWidth(ModScreenMaxWidth),
-                                                GUILayout.ExpandHeight(true),
-                                                GUILayout.MinHeight(ModScreenMinHeight),
-                                                GUILayout.MaxHeight(ModScreenMaxHeight));
+                ModManagerScreenId = GetHashCode();
             }
-            if (ShowMpMngr)
+            ModManagerScreen = GUILayout.Window(
+                                               ModManagerScreenId,
+                                               ModManagerScreen,
+                                               InitModManagerWindow,
+                                               $"{ModName} created by [Dragon Legion] Immaanuel#4300 - Screen Id: {ModManagerScreenId}",
+                                               GUI.skin.window,
+                                               GUILayout.ExpandWidth(true),
+                                               GUILayout.MinWidth(ModManagerScreenMinWidth),
+                                               GUILayout.MaxWidth(ModManagerScreenMaxWidth),
+                                               GUILayout.ExpandHeight(true),
+                                               GUILayout.MinHeight(ModManagerScreenMinHeight),
+                                               GUILayout.MaxHeight(ModManagerScreenMaxHeight));
+        }
+
+        private void InittModMpMngrScreen()
+        {
+            if (ModMpMngrScreenId < 0 || ModMpMngrScreenId == ModManagerScreenId)
             {
-                ModMpMngrScreen = GUILayout.Window(
-                    GetHashCode(),
-                    ModMpMngrScreen,
-                    InitMpMngrWindow,
-                    MpManagerTitle,
-                    GUI.skin.window,
-                    GUILayout.ExpandWidth(true),
-                    GUILayout.MinWidth(ModMpScreenMinWidth),
-                    GUILayout.MaxWidth(ModMpScreenMaxWidth),
-                    GUILayout.ExpandHeight(true),
-                    GUILayout.MinHeight(ModMpScreenMinHeight),
-                    GUILayout.MaxHeight(ModMpScreenMaxHeight));
+                ModMpMngrScreenId = GetHashCode() + 1;
             }
+            ModMpMngrScreen = GUILayout.Window(
+                   ModMpMngrScreenId,
+                   ModMpMngrScreen,
+                   InitModMpMngrWindow,
+                   $"{MpManagerTitle} - Screen Id: {ModMpMngrScreenId}",
+                   GUI.skin.window,
+                   GUILayout.ExpandWidth(true),
+                   GUILayout.MinWidth(ModMpMngrScreenMinWidth),
+                   GUILayout.MaxWidth(ModMpMngrScreenMaxWidth),
+                   GUILayout.ExpandHeight(true),
+                   GUILayout.MinHeight(ModMpMngrScreenMinHeight),
+                   GUILayout.MaxHeight(ModMpMngrScreenMaxHeight));
         }
 
         private void InitData()
@@ -497,18 +538,18 @@ namespace ModManager
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void CloseWindow()
+        private void CloseWindow(bool blockPlayer = false)
         {
-            ShowUI = false;
-            ShowMpMngr = false;
-            EnableCursor(false);            
+            ShowModManagerScreen = false;
+            ShowModMpMngrScreen = false;
+            EnableCursor(blockPlayer);            
         }
         
-        private void InitModManagerScreen(int windowID)
+        private void InitModManagerWindow(int windowID)
         {
-            ModScreenStartPositionX = ModManagerScreen.x;
-            ModScreenStartPositionY = ModManagerScreen.y;
-            ModMpScreenTotalWidth = ModManagerScreen.width;
+            ModManagerScreenStartPositionX = ModManagerScreen.x;
+            ModManagerScreenStartPositionY = ModManagerScreen.y;
+            ModManagerScreenTotalWidth = ModManagerScreen.width;
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ScreenMenuBox();
@@ -522,17 +563,24 @@ namespace ModManager
                     {
                         ClientManagerBox();
                     }
-                    AllModsListBox();
+                    if (GUILayout.Button("Mod List", GUI.skin.button))
+                    {
+                        ToggleShowUI(6);
+                    }
+                    if (ShowModList)
+                    {
+                        AllModsListBox();
+                    }                   
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void InitMpMngrWindow(int windowID)
+        private void InitModMpMngrWindow(int windowID)
         {
-            ModMpScreenStartPositionX = ModMpMngrScreen.x;
-            ModMpScreenStartPositionY = ModMpMngrScreen.y;
-            ModMpScreenTotalWidth = ModMpMngrScreen.width;
+            ModMpMngrScreenStartPositionX = ModMpMngrScreen.x;
+            ModMpMngrScreenStartPositionY = ModMpMngrScreen.y;
+            ModMpMngrScreenTotalWidth = ModMpMngrScreen.width;
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 MpScreenMenuBox();
@@ -546,6 +594,7 @@ namespace ModManager
                     {
                         MultiplayerInfoBox();
                     }
+
                     GUILayout.Label($"All players currently in game: ", GUI.skin.label);
                     PlayersScrollViewBox();
 
@@ -634,9 +683,9 @@ namespace ModManager
 
         private void SendTexMessagesBox()
         {
-            using (var textmsgViewScope = new GUILayout.VerticalScope(GUI.skin.box))
+            using (var textmsgViewScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
-                GUILayout.Label($"Type in your message to send to player.", GUI.skin.label);
+                GUILayout.Label($"Type your message: ", GUI.skin.label , GUILayout.Width(50f));
                 TextChatMessage = GUILayout.TextArea(TextChatMessage, GUI.skin.textArea);
             }
         }
@@ -645,9 +694,11 @@ namespace ModManager
         {
             try
             {
-                if (!string.IsNullOrEmpty(SelectedPlayerName) && CoopPlayerList != null)
+                if (!string.IsNullOrEmpty(SelectedPlayerName) &&
+                    CoopPlayerList != null &&
+                    SelectedPlayerName?.ToLowerInvariant() != GetHostPlayerName()?.ToLowerInvariant())
                 {
-                    P2PPeer peerPlayerToKick = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
+                    P2PPeer peerPlayerToKick = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLowerInvariant() == SelectedPlayerName.ToLowerInvariant());
                     if (peerPlayerToKick != null)
                     {
                         P2PLobbyMemberInfo playerToKickLobbyMemberInfo = GetPlayerLobbyMemberInfo(peerPlayerToKick);
@@ -657,14 +708,22 @@ namespace ModManager
                             ShowHUDBigInfo(HUDBigInfoMessage(PlayerWasKickedMessage(SelectedPlayerName), MessageType.Info, Color.green));
                             P2PSession.Instance.SendTextChatMessage(PlayerWasKickedMessage(SelectedPlayerName));
                         }
+                        else
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage($"Could not find selected player in lobby!", MessageType.Warning, Color.yellow));
+                        }
                     }
+                    else
+                    {
+                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not find selected player in lobby!", MessageType.Warning, Color.yellow));
+                    }
+                }
+                if (SelectedPlayerName?.ToLowerInvariant() == GetHostPlayerName()?.ToLowerInvariant())
+                {
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Are you trying to kick your self now OO? Impossibru!", MessageType.Warning, Color.red));
                 }
                 else
                 {
-                    if (SelectedPlayerName == P2PSession.Instance.LocalPeer.GetDisplayName())
-                    {
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Are you trying to kick your self now OO? Impossibru!", MessageType.Warning, Color.red));
-                    }
                     ShowHUDBigInfo(HUDBigInfoMessage($"Please select a player first.", MessageType.Info, Color.yellow));
                 }
             }
@@ -683,9 +742,11 @@ namespace ModManager
         {
             try
             {
-                if (!string.IsNullOrEmpty(SelectedPlayerName) && CoopPlayerList != null)
+                if (!string.IsNullOrEmpty(SelectedPlayerName) &&
+                    CoopPlayerList != null &&
+                    SelectedPlayerName?.ToLowerInvariant() != GetHostPlayerName()?.ToLowerInvariant())
                 {
-                    P2PPeer peerPlayerToChat = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
+                    P2PPeer peerPlayerToChat = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLowerInvariant() == SelectedPlayerName.ToLowerInvariant());
                     if (peerPlayerToChat != null)
                     {
                         P2PLobbyMemberInfo playerToChatLobbyMemberInfo = GetPlayerLobbyMemberInfo(peerPlayerToChat);
@@ -693,15 +754,23 @@ namespace ModManager
                         {
                             P2PSession.Instance.SendTextChatMessage($"From: {GetHostPlayerName()} \n To {SelectedPlayerName}: \n" + TextChatMessage);
                         }
+                        else
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage($"Could not find selected player in lobby!", MessageType.Warning, Color.yellow));
+                        }
                     }
+                    else
+                    {
+                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not find selected player in lobby!", MessageType.Warning, Color.yellow));
+                    }
+                }
+                if (SelectedPlayerName?.ToLowerInvariant() == GetHostPlayerName()?.ToLowerInvariant())
+                {
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Are you trying to talk to your self now OO? Madness inc!", MessageType.Warning, Color.red));
                 }
                 else
                 {
-                    if (SelectedPlayerName == P2PSession.Instance.LocalPeer.GetDisplayName())
-                    {
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Are you trying to talk to your self now OO? Madness inc!", MessageType.Warning, Color.red));
-                    }
-                    ShowHUDBigInfo(HUDBigInfoMessage($"Please select a player first.",MessageType.Info, Color.yellow));
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Please select a player first.", MessageType.Info, Color.yellow));
                 }
             }
             catch (Exception exc)
@@ -879,7 +948,7 @@ namespace ModManager
 
                 if (GUILayout.Button(MpManagerTitle, GUI.skin.button))
                 {
-                   ShowMpMngr = true;
+                   ToggleShowUI(1);
                 }
             }
         }
@@ -900,16 +969,21 @@ namespace ModManager
                 if (ShowInfo && SelectedMod != null)
                 {
                     ModInfoBox();
-                }
-                else
-                {
-                    GUILayout.Label($"Could not get info for {ModName}.", GUI.skin.label);
-                }
+                }               
 
                 AllowModsAndCheatsOption();
                 if (AllowModsAndCheatsForMultiplayer)
                 {
                     CheatOptionsBox();
+                }
+                else
+                {
+                    using (var infoScope = new GUILayout.VerticalScope(GUI.skin.label))
+                    {
+                        GUI.color = Color.yellow;
+                        GUILayout.Label($"To use cheats, first enable {nameof(AllowModsAndCheatsForMultiplayer)} ", GUI.skin.label);
+                        GUI.color = DefaultColor;
+                    }
                 }
 
                 EnableDebugModeOption();
@@ -949,18 +1023,113 @@ namespace ModManager
         {
             using (var gameinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUI.color = Color.cyan;
-                GUILayout.Label("Game info:", GUI.skin.label);
-                GUI.color = DefaultColor;
+                GameInfoScrollViewPosition = GUILayout.BeginScrollView(GameInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
 
-                GUILayout.Label($"{nameof(SteamAppId)}: {SteamAppId}", GUI.skin.label);
-                bool IsAnyCheatEnabled = Cheats.m_GhostMode || Cheats.m_OneShotConstructions || Cheats.m_InstantBuild || Cheats.m_GodMode;
-                GUILayout.Label($"{nameof(Cheats)}: {(IsAnyCheatEnabled ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"{nameof(GreenHellGame.DEBUG)} Mode: {(GreenHellGame.DEBUG ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"{nameof(GameMode)}: {GreenHellGame.Instance.m_GHGameMode}", GUI.skin.label);
-                GUILayout.Label($"{nameof(P2PGameVisibility)}: {GreenHellGame.Instance.m_Settings.m_GameVisibility}", GUI.skin.label);
-                GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: {(IsModActiveForSingleplayer ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}: {(IsModActiveForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);               
+                GUI.color = Color.cyan;
+                GUILayout.Label($"{nameof(GreenHellGame)}", InfoHeaderLabel);
+                GUI.color = DefaultColor;
+                using (var steamappScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(SteamAppId)}: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{SteamAppId}", InfoFieldValueLabel);
+                }
+                using (var gghmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(GameMode)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{GreenHellGame.Instance.m_GHGameMode}", InfoFieldValueLabel);
+                }
+                using (var gmvisScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(P2PGameVisibility)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{GreenHellGame.Instance.m_Settings.m_GameVisibility}", InfoFieldValueLabel);
+                }
+                GUI.color = Color.cyan;
+                GUILayout.Label($"{nameof(MainLevel)}", InfoHeaderLabel);
+                GUI.color = DefaultColor;
+                using (var mlevelggmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(GameMode)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{MainLevel.Instance.m_GameMode}", InfoFieldValueLabel);
+                }
+                using (var mleveljoinScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_CanJoinSession)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(MainLevel.Instance.m_CanJoinSession ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var mleveltutScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_Tutorial)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(MainLevel.Instance.m_Tutorial ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                GUI.color = Color.cyan;
+                GUILayout.Label(ModName, InfoHeaderLabel);
+                GUI.color = DefaultColor;
+                using (var ngmtScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    string NextGameMode = IsMultiplayerGameModeActive ? "Switch to single player" : "Switch to multiplayer";
+                    GUILayout.Label($"{nameof(NextGameMode)}: ", InfoFieldNameLabel);
+                    GUILayout.Label(NextGameMode, InfoFieldValueLabel);
+                }
+                using (var isammodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsMultiplayerGameModeActive)}: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{(IsMultiplayerGameModeActive ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var aspmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{(IsModActiveForSingleplayer ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }               
+                using (var ampmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}", InfoFieldNameLabel);
+                    GUILayout.Label($"{(IsModActiveForMultiplayer ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }                
+                using (var permScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var ghdebugmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(GreenHellGame.DEBUG)} Mode: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{(GreenHellGame.DEBUG ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var debugmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(EnableDebugMode)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                GUI.color = Color.cyan;             
+                GUILayout.Label($"{nameof(Cheats)}", InfoHeaderLabel);
+                GUI.color = DefaultColor;
+                using (var cheatsIBScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_InstantBuild)}: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_InstantBuild ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var cheatsGhostModeScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GhostMode)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_GhostMode ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var cheatsGodScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GodMode)}: ", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_GodMode ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var cheatsOSAIScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotAI)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_OneShotAI ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var cheatsOSCScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotConstructions)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_OneShotConstructions ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+
+                GUILayout.EndScrollView();
             }
         }
 
@@ -973,18 +1142,53 @@ namespace ModManager
             }
             using (var multiplayerinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUI.color = Color.cyan;
-                GUILayout.Label("Multiplayer info:", GUI.skin.label);
-                GUI.color = DefaultColor;
+                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
 
-                GUILayout.Label($"{nameof(LocalHostDisplayName)}: {LocalHostDisplayName}", GUI.skin.label);
-                GUILayout.Label($"{nameof(PlayerCount)}: {PlayerCount}", GUI.skin.label);
-                GUILayout.Label($"{nameof(IsHostManager)}: { (IsHostManager ? "enabled" : "disabled"  )}", GUI.skin.label);
-                GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}: {( IsHostWithPlayersInCoop ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}: {(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", GUI.skin.label);                
-                GUILayout.Label($"Host command to allow mods for multiplayer: {HostCommandToAllowModsWithRequestId()}", GUI.skin.label);
-                GUILayout.Label($"{nameof(EnableDebugMode)}: {(EnableDebugMode ? "enabled" : "disabled")}", GUI.skin.label);
-                GUILayout.Label($"Host command to enable Debug Mode for multiplayer: {HostCommandToEnableDebugWithRequestId()}", GUI.skin.label);
+                GUI.color = Color.cyan;
+                GUILayout.Label("Multiplayer info", InfoHeaderLabel);
+                GUI.color = DefaultColor;
+                using (var lhdisScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(LocalHostDisplayName)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{LocalHostDisplayName}", InfoFieldValueLabel);
+                }
+                using (var pctScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(PlayerCount)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{PlayerCount}", InfoFieldValueLabel);
+                }
+                using (var ihmScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsHostManager)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(IsHostManager ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }               
+                using (var ihwpcScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(IsHostWithPlayersInCoop ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }               
+                using (var amacScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }               
+                using (var hctamdScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"Host command to allow mods:", InfoFieldNameLabel);
+                    GUILayout.Label($"{HostCommandToAllowModsWithRequestId()}", InfoFieldValueLabel);
+                }
+                using (var edmcScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(EnableDebugMode)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}", InfoFieldValueLabel);
+                }
+                using (var hctedScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"Host command to enable Debug Mode:", InfoFieldNameLabel);
+                    GUILayout.Label($"{HostCommandToEnableDebugWithRequestId()}", InfoFieldValueLabel);
+                }               
+
+                GUILayout.EndScrollView();
             }
         }
 
@@ -992,46 +1196,52 @@ namespace ModManager
         {
             using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
+                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+
                 GUI.color = Color.cyan;
-                GUILayout.Label("Mod info:", GUI.skin.label);
+                GUILayout.Label("Mod info", InfoHeaderLabel);
                 GUI.color = DefaultColor;
 
                 using (var gidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.GameID)}:", GUI.skin.label);
-                    GUILayout.Label($"{SelectedMod.GameID}", GUI.skin.label);
+                    GUILayout.Label($"{nameof(ConfigurableMod.GameID)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.GameID}", InfoFieldValueLabel);
                 }
                 using (var midScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.ID)}:", GUI.skin.label);
-                    GUILayout.Label($"{SelectedMod.ID}", GUI.skin.label);
+                    GUILayout.Label($"{nameof(ConfigurableMod.ID)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.ID}", InfoFieldValueLabel);
                 }
                 using (var uidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.UniqueID)}:", GUI.skin.label);
-                    GUILayout.Label($"{SelectedMod.UniqueID}", GUI.skin.label);
+                    GUILayout.Label($"{nameof(ConfigurableMod.UniqueID)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.UniqueID}", InfoFieldValueLabel);
                 }
                 using (var versionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.Version)}:", GUI.skin.label);
-                    GUILayout.Label($"{SelectedMod.Version}", GUI.skin.label);
+                    GUILayout.Label($"{nameof(ConfigurableMod.Version)}:", InfoFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.Version}", InfoFieldValueLabel);
                 }
+
                 GUI.color = Color.cyan;
-                GUILayout.Label("Mod buttons info: ", GUI.skin.label);
+                GUILayout.Label("Mod buttons info", InfoHeaderLabel);
                 GUI.color = DefaultColor;
+
                 foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                 {
                     using (var btnidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{nameof(ConfigurableModButton.ID)}:", GUI.skin.label);
-                        GUILayout.Label($"{configurableModButton.ID}", GUI.skin.label);
+                        GUILayout.Label($"{nameof(ConfigurableModButton.ID)}:", InfoFieldNameLabel);
+                        GUILayout.Label($"{configurableModButton.ID}", InfoFieldValueLabel);
                     }
                     using (var btnbindScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}:", GUI.skin.label);
-                        GUILayout.Label($"{configurableModButton.KeyBinding}", GUI.skin.label);
+                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}:", InfoFieldNameLabel);
+                        GUILayout.Label($"{configurableModButton.KeyBinding}", InfoFieldValueLabel);
                     }
                 }
+
+                GUILayout.EndScrollView();
             }
         }
 
@@ -1065,40 +1275,40 @@ namespace ModManager
 
         private void CollapseWindow()
         {
-            ModScreenStartPositionX = ModManagerScreen.x;
-            ModScreenStartPositionY = ModManagerScreen.y;
-            ModScreenTotalWidth = ModManagerScreen.width;
+            ModManagerScreenStartPositionX = ModManagerScreen.x;
+            ModManagerScreenStartPositionY = ModManagerScreen.y;
+            ModManagerScreenTotalWidth = ModManagerScreen.width;
 
             if (!IsMinimized)
             {
-                ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
+                ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenMinHeight);
                 IsMinimized = true;
             }
             else
             {
-                ModManagerScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+                ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenTotalHeight);
                 IsMinimized = false;
             }
-            InitWindow();
+            InitModManagerScreen();
         }
 
         private void CollapseMpWindow()
         {
-            ModMpScreenStartPositionX = ModMpMngrScreen.x;
-            ModMpScreenStartPositionY = ModMpMngrScreen.y;
-            ModMpScreenTotalWidth = ModMpMngrScreen.width;
+            ModMpMngrScreenStartPositionX = ModMpMngrScreen.x;
+            ModMpMngrScreenStartPositionY = ModMpMngrScreen.y;
+            ModMpMngrScreenTotalWidth = ModMpMngrScreen.width;
 
             if (!IsMpMinimized)
             {
-                ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenMinHeight);
+                ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenMinHeight);
                 IsMpMinimized = true;
             }
             else
             {
-                ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenTotalHeight);
+                ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
                 IsMpMinimized = false;
             }
-            InitWindow();
+            InittModMpMngrScreen();
         }
 
         private void AllowModsAndCheatsOption()
@@ -1110,9 +1320,9 @@ namespace ModManager
 
         private void EnableDebugModeOption()
         {
-            bool _EnableDebugMode = EnableDebugMode;
-            EnableDebugMode = GUILayout.Toggle(EnableDebugMode, "Enable Debug Mode for multiplayer?", GUI.skin.toggle);
-            ToggleModOption(_EnableDebugMode, nameof(EnableDebugMode));
+            bool _enableDebugMode = GreenHellGame.DEBUG;
+            GreenHellGame.DEBUG = GUILayout.Toggle(GreenHellGame.DEBUG, "Enable Debug Mode for multiplayer?", GUI.skin.toggle);
+            ToggleModOption(_enableDebugMode, nameof(GreenHellGame.DEBUG));
         }
 
         private void RequestInfoShownOption()
@@ -1124,20 +1334,25 @@ namespace ModManager
 
         private void SwitchGameModeOption()
         {
-            bool _GameModeSwitched = GameModeSwitched;
-            GameModeSwitched = GUILayout.Toggle(GameModeSwitched, "Switch to Multiplayer?", GUI.skin.toggle);
-            ToggleModOption(_GameModeSwitched, nameof(GameModeSwitched));
-            if (_GameModeSwitched != GameModeSwitched)
+            string NextGameMode = IsMultiplayerGameModeActive ? "Switch to single player" : "Switch to multiplayer";
+            bool _isMultiplayerGameModeActive = IsMultiplayerGameModeActive;
+
+            if (GUILayout.Button(NextGameMode, GUI.skin.button))
             {
+                IsMultiplayerGameModeActive = !IsMultiplayerGameModeActive;
+            }
+                     
+            if (_isMultiplayerGameModeActive != IsMultiplayerGameModeActive)
+            {   
                 ShowConfirmSwitchGameModeDialog();
             }          
         }
 
         public static void ToggleModOption(bool optionState, string optionName)
         {
-            if (optionName == nameof(EnableDebugMode) && optionState != EnableDebugMode)
+            if (optionName == nameof(GreenHellGame.DEBUG) && optionState != GreenHellGame.DEBUG)
             {
-                GreenHellGame.DEBUG = optionState;
+                EnableDebugMode = optionState;
                 if (optionState)
                 {
                     GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
@@ -1148,7 +1363,7 @@ namespace ModManager
                     GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
                     MainLevel.Instance.m_GameMode = GameModeAtStart;
                 }
-                onOptionToggled?.Invoke(EnableDebugMode, $"Using Debug Mode has been");               
+                onOptionToggled?.Invoke(GreenHellGame.DEBUG, $"Using Debug Mode has been");               
             }
 
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
@@ -1161,20 +1376,15 @@ namespace ModManager
             {
                 onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how mods and cheats can be");
                 RequestsSendToHost = 0;
-            }
-
-            if (optionName == nameof(GameModeSwitched) && optionState != GameModeSwitched)
-            {
-                onOptionToggled?.Invoke(GameModeSwitched, $"Multiplayer mode has been");
-            }
+            }           
         }
 
-        private static void SwitchGameMode()
+        private void SwitchGameMode()
         {
             try
             {
-                GreenHellGame.Instance.m_Settings.m_GameVisibility = GameModeSwitched == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
-                if (GameModeSwitched && ReplTools.IsCoopEnabled())
+                GreenHellGame.Instance.m_Settings.m_GameVisibility = IsMultiplayerGameModeActive == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
+                if (IsMultiplayerGameModeActive && ReplTools.IsCoopEnabled())
                 {
                     GreenHellGame.Instance.m_SessionJoinHelper = SessionJoinHelperAtStart ?? new SessionJoinHelper();
                     GreenHellGame.Instance.m_GHGameMode = GameMode.PVE;
@@ -1246,8 +1456,8 @@ namespace ModManager
         {
             try
             {
-                EnableCursor(true);
-                string description = $"Are you sure you want to switch to  {(GameModeSwitched == true ? "multiplayer?  Your current game will first be saved, if possible.\n" : "singleplayer? Your current game and of coop players' games will first be saved, if possible.\n")}\n";
+                CloseWindow(true);
+                string description = $"Are you sure you want to switch to  {(IsMultiplayerGameModeActive == false ? "multiplayer?\nYour current game will first be saved, if possible.\n"  : "singleplayer?\nYour current game and of coop players' games will first be saved, if possible.\n")}\n";
                 YesNoDialog switchYesNoDialog = GreenHellGame.GetYesNoDialog();
                 switchYesNoDialog.Show(this, DialogWindowType.YesNo, $"{ModName} Info", description, true, false);
                 switchYesNoDialog.gameObject.SetActive(true);
