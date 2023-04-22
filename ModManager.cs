@@ -119,19 +119,19 @@ namespace ModManager
         {
             alignment = TextAnchor.MiddleCenter,
             fontStyle = FontStyle.Bold,
-            fontSize = 10             
+            fontSize = 12             
         };
         public GUIStyle InfoFieldNameLabel => new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleLeft,
-            fontSize = 8,
+            fontSize = 10,
             fixedWidth = 150f,
             wordWrap = true
         };
         public GUIStyle InfoFieldValueLabel => new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleRight,
-            fontSize = 8,
+            fontSize = 10,
             fixedWidth = 250f,
             wordWrap = true
         };
