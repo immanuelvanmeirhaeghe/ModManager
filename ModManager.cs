@@ -306,10 +306,11 @@ namespace ModManager
             GameVisibilityAtSessionStart = P2PSession.Instance.GetGameVisibility();
             GameVisibilityAtStart = GreenHellGame.Instance.m_Settings.m_GameVisibility;
             IsMultiplayerGameModeActive = ( GameVisibilityAtSessionStart == P2PGameVisibility.Singleplayer || GameVisibilityAtStart == P2PGameVisibility.Singleplayer) ? false : true;
-           SessionJoinHelperAtStart = GreenHellGame.Instance.m_SessionJoinHelper;
+            SessionJoinHelperAtStart = GreenHellGame.Instance.m_SessionJoinHelper;
             CanJoinSessionAtStart = MainLevel.Instance.m_CanJoinSession;
             ConfigurableModList = GetModList();
             ShortcutKey = GetShortcutKey();
+            SelectedMod = ConfigurableModList.Find(cfgMod => cfgMod.ID == ModName);
             SetNewChatRequestId();
         }
 
@@ -794,7 +795,7 @@ namespace ModManager
                 {
                     ToggleShowUI(4);
                 }
-                if (ShowModInfo)
+                if (ShowModInfo && SelectedMod != null)
                 {
                   ModInfoBox();
                 }
@@ -818,12 +819,14 @@ namespace ModManager
         private void AllModsScrollView()
         {
             ModListScrollViewPosition = GUILayout.BeginScrollView(ModListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
-            int _SelectedModIDIndex = SelectedModIDIndex;
+            int _selectedModIDIndex = SelectedModIDIndex;
             string[] modlistNames = GetModListNames();
             if (modlistNames != null)
             {
+                SelectedModID = modlistNames[SelectedModIDIndex];
                 SelectedModIDIndex = GUILayout.SelectionGrid(SelectedModIDIndex, modlistNames, 3, GUI.skin.button);
-                if (_SelectedModIDIndex != SelectedModIDIndex)
+
+                if (_selectedModIDIndex != SelectedModIDIndex)
                 {
                     SelectedModID = modlistNames[SelectedModIDIndex];
                     SelectedMod = ConfigurableModList.Find(cfgMod => cfgMod.ID == SelectedModID);
