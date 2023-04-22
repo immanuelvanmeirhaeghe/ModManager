@@ -5,14 +5,21 @@ using System.Text;
 
 namespace ModManager.Data.Enums
 {
+    /// <summary>
+    /// Enumerates event identifiers
+    /// </summary>
     public enum EventID
     {
-        None,
-        AllowModsValueChanged,
-        AllowCheatsValueChanged,
-        Count
+        NoneEnabled = 0,
+        ModsAndCheatsNotEnabled = 1,
+        EnableDebugModeNotEnabled = 2,
+        ModsAndCheatsEnabled = 4,
+        EnableDebugModeEnabled = 16,
+        AllEnabled = 32
     }
-
+    /// <summary>
+    /// Enumerates message types
+    /// </summary>
     public enum MessageType
     {
         Info,
@@ -32,5 +39,5 @@ namespace ModManager.Data.Enums
         TheForestDedicatedServer,
         TheForestVR
     }
-
+        
 }

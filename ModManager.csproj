@@ -358,8 +358,8 @@
     <Compile Include="Extensions\HUDTextChatHistoryExtended.cs" />
     <Compile Include="Extensions\PlayerExtended.cs" />
     <Compile Include="Data\Interfaces\IConfigurableMod.cs" />
-    <Compile Include="Data\ConfigurableMod.cs" />
-    <Compile Include="Data\ConfigurableModButton.cs" />
+    <Compile Include="Data\Modding\ConfigurableMod.cs" />
+    <Compile Include="Data\Modding\ConfigurableModButton.cs" />
     <Compile Include="Data\Enums.cs" />
     <Compile Include="Data\Interfaces\IConfigurableModButton.cs" />
     <Compile Include="ModManager.cs" />

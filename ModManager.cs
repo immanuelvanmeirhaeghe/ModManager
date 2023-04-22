@@ -1,7 +1,7 @@
 using Enums;
-using ModManager.Data;
 using ModManager.Data.Enums;
 using ModManager.Data.Interfaces;
+using ModManager.Data.Modding;
 using RootMotion.FinalIK;
 using Steamworks;
 using System;
@@ -23,31 +23,35 @@ namespace ModManager
     /// </summary>
     public class ModManager : MonoBehaviour, IYesNoDialogOwner
     {
-        private const string MpManagerText = "Multiplayer Manager";
+        private const string MpManagerTitle = "Multiplayer Manager";
         private static ModManager Instance;
         private static readonly string RuntimeConfiguration = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), $"{nameof(RuntimeConfiguration)}.xml");
       
         private static readonly string ModName = nameof(ModManager);
-        private static float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenTotalHeight = 500f;
-        private static readonly float ModScreenMinWidth = 500f;
-        private static readonly float ModScreenMaxWidth = Screen.width;
-        private static readonly float ModScreenMinHeight = 50f;
-        private static readonly float ModScreenMaxHeight = Screen.height;
+
+        private static float ModScreenTotalWidth { get; set; } = 500f;
+        private static float ModScreenTotalHeight { get; set; } = 600f;
+        private static float ModScreenMinWidth { get; set; } = 500f;
+        private static float ModScreenMinHeight { get; set; } = 50f;
+        private static float ModScreenMaxWidth { get; set; } = Screen.width;
+        private static float ModScreenMaxHeight { get; set; } = Screen.height;
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
+        private static bool IsMinimized { get; set; } = false;
+              
+        private static float ModMpScreenTotalWidth { get; set; } = 500f;
+        private static float ModMpScreenTotalHeight { get; set; } = 600f;
+        private static float ModMpScreenMinWidth { get; set; } = 500f;        
+        private static float ModMpScreenMinHeight { get; set; } = 50f;
+        private static float ModMpScreenMaxWidth { get; set; } = Screen.width;
+        private static float ModMpScreenMaxHeight { get; set; } = Screen.height;
         private static float ModMpScreenStartPositionX { get; set; } = Screen.width / 2.5f;
         private static float ModMpScreenStartPositionY { get; set; } = Screen.height / 2.5f;
-        public static float ModMpScreenTotalWidth { get; private set; }
-        private static readonly float ModMpScreenTotalHeight = 500f;
-        private static readonly float ModMpScreenMinHeight = 50f;
-        private static bool IsMinimized { get; set; } = false;
+        private static bool IsMpMinimized { get; set; }
 
         private static CursorManager LocalCursorManager;
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
-       
-        private static MainMenuManager LocalMainMenuManager;
 
         private Color DefaultColor = GUI.color;
 
@@ -70,6 +74,7 @@ namespace ModManager
         public string SteamAppId  => GreenHellGame.s_SteamAppId.m_AppId.ToString();
         public int PlayerCount => P2PSession.Instance.GetRemotePeerCount();
 
+        public static EventID PermissionChanged { get; set; } = EventID.NoneEnabled;
         public delegate void OnPermissionValueChanged(bool optionValue);
         public static event OnPermissionValueChanged onPermissionValueChanged;
         public delegate void OnOptionToggled(bool optionValue, string optionText);
@@ -85,12 +90,14 @@ namespace ModManager
         public int SelectedModIDIndex { get; set; } = 0;
         public string SelectedModID { get; set; } = string.Empty;
         public IConfigurableMod SelectedMod { get; set; } = default;
+
         public static bool GameModeSwitched { get; set; } = false;
         public static bool RequestInfoShown { get; set; } = false;
         public static int RequestsSendToHost { get; set; } = 0;
 
         public static bool EnableDebugMode { get; set; } = false;
         public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
+
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
@@ -104,7 +111,9 @@ namespace ModManager
         public static List<P2PLobbyMemberInfo> CoopLobbyMembers { get; set; }
         public static SessionJoinHelper SessionJoinHelperAtStart { get; set; }
         public static bool CanJoinSessionAtStart { get; set; }
-        public bool IsMpMinimized { get; private set; }
+
+        public static string OnlyForSinglePlayerOrHostMessage() 
+            => $"Only available for single player or when host. Host {GetHostPlayerName()} can activate using {ModName}.";
 
         public static string GetClientCommandToUseMods()
             => "!requestMods";
@@ -115,7 +124,7 @@ namespace ModManager
         public static string GetHostCommandToAllowMods(float chatRequestId)
             => $"!allowMods{chatRequestId}";
 
-        public static string GetHostCommandToEnableDebug(float chatRequestId)
+        public static string GetHostCommandToUseDebugMode(float chatRequestId)
          => $"!allowDebug{chatRequestId}";
 
         public static string GetClientPlayerName()
@@ -129,11 +138,17 @@ namespace ModManager
             ChatRequestId = Mathf.FloorToInt(UnityEngine.Random.Range(0f,9999f));
         }
 
+        public static string EnableModsAndCheatsClientRequest()
+            => $"to allow mods and cheats for multiplayer";
+        
+        public static string EnableDebugModeClientRequest()
+            => $"to enable Debug Mode for multiplayer";
+
         public static string HostCommandToAllowModsWithRequestId()
             => GetHostCommandToAllowMods(ChatRequestId);
 
         public static string HostCommandToEnableDebugWithRequestId()
-            => GetHostCommandToEnableDebug(ChatRequestId);
+            => GetHostCommandToUseDebugMode(ChatRequestId);
 
         public static string ClientSystemInfoChatMessage(string command, Color? color = null)
             => SystemInfoChatMessage(
@@ -147,9 +162,9 @@ namespace ModManager
             + $"\n<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>Be aware that this can be used for griefing!</color>",
                 color);
 
-        public static string RequestWasSentMessage(Color? color = null)
+        public static string RequestWasSentMessage(string text, Color? color = null)
             => SystemInfoChatMessage(
-                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request sent to host!</color>",
+                $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.green))}>Request {text} sent to host!</color>",
                 color);
 
         public string PermissionWasGrantedMessage()
@@ -202,13 +217,13 @@ namespace ModManager
             return Instance;
         }
 
-        public static void ShowHUDBigInfo(string text)
+        public static void ShowHUDBigInfo(string text, float duration = 3f)
         {
             string header = $"{ModName} Info";
             string textureName = HUDInfoLogTextureType.Count.ToString();
 
             HUDBigInfo bigInfo = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
-            HUDBigInfoData.s_Duration = 3f;
+            HUDBigInfoData.s_Duration = duration;
             HUDBigInfoData bigInfoData = new HUDBigInfoData
             {
                 m_Header = header,
@@ -223,7 +238,8 @@ namespace ModManager
         public void ShowHUDInfoLog(string ItemInfo, string localizedTextKey)
         {
             Localization localization = GreenHellGame.Instance.GetLocalization();
-            ((HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
+            var messages = (HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages));
+            messages.AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
         }
 
         private void EnableCursor(bool blockPlayer = false)
@@ -242,6 +258,16 @@ namespace ModManager
                 LocalPlayer.UnblockRotation();
                 LocalPlayer.UnblockInspection();
             }
+        }
+
+        private void Awake()
+        {
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            Instance = null;
         }
 
         private void Start()
@@ -314,14 +340,12 @@ namespace ModManager
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
         {
-            if (!optionValue)
-            {
-                Cheats.m_OneShotAI = optionValue;
-                Cheats.m_OneShotConstructions = optionValue;
-                Cheats.m_GhostMode = optionValue;
-                Cheats.m_GodMode = optionValue;
-                Cheats.m_ImmortalItems = optionValue;
-            }
+            IsModActiveForMultiplayer = optionValue;
+            ShowHUDBigInfo(
+                          (optionValue ?
+                            HUDBigInfoMessage(PermissionChangedMessage($"granted"), MessageType.Info, Color.green)
+                            : HUDBigInfoMessage(PermissionChangedMessage($"revoked"), MessageType.Warning, Color.yellow))
+                            );           
         }
 
         private void ModManager_onOptionToggled(bool optionValue, string optionText)
@@ -344,35 +368,30 @@ namespace ModManager
                     EnableCursor(blockPlayer: false);
                 }
             }
-
-            if (Input.GetKey(KeyCode.Escape) && Input.GetKeyDown(ShortcutKey))
-            {
-                CloseWindow(2);
-            }
         }
 
-        private void ToggleShowUI(int level)
+        private void ToggleShowUI(int controlId)
         {
-            switch (level)
+            switch (controlId)
             {
                 case 0:
                     ShowUI = !ShowUI;
-                    return;
+                    break;
                 case 1:
                     ShowMpMngr = !ShowMpMngr;
-                    return;
+                    break;
                 case 2:
                     ShowGameInfo = !ShowGameInfo;
-                    return; 
+                    break; 
                 case 3:
                     ShowMpInfo = !ShowMpInfo;
-                    return;
+                    break;
                 case 4:
                     ShowModInfo = !ShowModInfo;
-                    return;
+                    break;
                 case 5:
                     ShowInfo = !ShowInfo;
-                    return;
+                    break;
                 default:
                     ShowUI = !ShowUI;
                     ShowMpMngr = !ShowMpMngr;
@@ -380,8 +399,16 @@ namespace ModManager
                     ShowMpInfo = !ShowMpInfo;
                     ShowModInfo = !ShowModInfo;
                     ShowInfo = !ShowInfo;
-                    return;
-            }          
+                    break;
+            }
+            if (!ShowUI && !ShowMpMngr)
+            {
+                EnableCursor(false);
+            }
+            else
+            {
+                EnableCursor(true);
+            }
         }
 
         private void OnGUI()
@@ -409,7 +436,7 @@ namespace ModManager
                                                 GUILayout.MaxWidth(ModScreenMaxWidth),
                                                 GUILayout.ExpandHeight(true),
                                                 GUILayout.MinHeight(ModScreenMinHeight),
-                                                GUILayout.MaxHeight(ModScreenMaxHeight));                                
+                                                GUILayout.MaxHeight(ModScreenMaxHeight));
             }
             if (ShowMpMngr)
             {
@@ -417,14 +444,14 @@ namespace ModManager
                     GetHashCode(),
                     ModMpMngrScreen,
                     InitMpMngrWindow,
-                    $"{ModName} - {MpManagerText}",
+                    MpManagerTitle,
                     GUI.skin.window,
                     GUILayout.ExpandWidth(true),
-                    GUILayout.MinWidth(ModScreenMinWidth),
-                    GUILayout.MaxWidth(ModScreenMaxWidth),
+                    GUILayout.MinWidth(ModMpScreenMinWidth),
+                    GUILayout.MaxWidth(ModMpScreenMaxWidth),
                     GUILayout.ExpandHeight(true),
-                    GUILayout.MinHeight(ModScreenMinHeight),
-                    GUILayout.MaxHeight(ModScreenMaxHeight));
+                    GUILayout.MinHeight(ModMpScreenMinHeight),
+                    GUILayout.MaxHeight(ModMpScreenMaxHeight));
             }
         }
 
@@ -432,10 +459,37 @@ namespace ModManager
         {
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
-            LocalCursorManager = CursorManager.Get();         
-            LocalMainMenuManager = MainMenuManager.Get();
+            LocalCursorManager = CursorManager.Get();
             CoopPlayerList = P2PSession.Instance.m_RemotePeers?.ToList();
-            
+            InitPermissionChanged();
+        }
+
+        private void InitPermissionChanged()
+        {
+            if (IsModActiveForMultiplayer)
+            {
+                PermissionChanged = EventID.ModsAndCheatsEnabled;
+            }
+            else
+            {
+                PermissionChanged = EventID.ModsAndCheatsNotEnabled;
+            }
+            if (EnableDebugMode)
+            {
+                PermissionChanged = EventID.EnableDebugModeEnabled;
+            }
+            else
+            {
+                PermissionChanged = EventID.EnableDebugModeNotEnabled;
+            }
+            if (IsModActiveForMultiplayer == false && EnableDebugMode == false)
+            {
+                PermissionChanged = EventID.NoneEnabled;
+            }
+            if (IsModActiveForMultiplayer == true && EnableDebugMode == true)
+            {
+                PermissionChanged = EventID.AllEnabled;
+            }
         }
 
         private void InitSkinUI()
@@ -443,40 +497,13 @@ namespace ModManager
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void CloseWindow(int wid)
+        private void CloseWindow()
         {
-            if (wid == 0)
-            {
-                ShowUI = false;
-            }
-            if (wid == 1)
-            {
-                ShowMpMngr = false;
-            }
-            if (wid == 2)
-            {
-                ShowUI = false;
-                ShowMpMngr = false;
-            }
-            EnableCursor(false);
+            ShowUI = false;
+            ShowMpMngr = false;
+            EnableCursor(false);            
         }
-
-        private void PlayerListScrollView()
-        {            
-            PlayerListScrollViewPosition = GUILayout.BeginScrollView(PlayerListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
-            int _SelectedPlayerIndex = SelectedPlayerIndex;
-            string[] playerNames = GetPlayerNames();
-            if (playerNames != null)
-            {             
-                SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, playerNames, 3, GUI.skin.button);
-                if (_SelectedPlayerIndex != SelectedPlayerIndex)
-                {
-                    SelectedPlayerName = playerNames[SelectedPlayerIndex];
-                }
-            }
-            GUILayout.EndScrollView();
-        }
-
+        
         private void InitModManagerScreen(int windowID)
         {
             ModScreenStartPositionX = ModManagerScreen.x;
@@ -495,7 +522,7 @@ namespace ModManager
                     {
                         ClientManagerBox();
                     }
-                    AllModsListBox();                   
+                    AllModsListBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -519,7 +546,9 @@ namespace ModManager
                     {
                         MultiplayerInfoBox();
                     }
+                    GUILayout.Label($"All players currently in game: ", GUI.skin.label);
                     PlayersScrollViewBox();
+
                     SendTexMessagesBox();
                     MpActionButtons();
                 }
@@ -541,18 +570,66 @@ namespace ModManager
                 }
                 if (GUILayout.Button("Close", GUI.skin.button))
                 {
-                    ShowMpMngr = false;
+                    ToggleShowUI(1);
                 }
             }
+        }
+
+        public string[] GetPlayerNames()
+        {
+            string LocalPeerDisplayName = P2PSession.Instance.LocalPeer.GetDisplayName();
+            string[] playerNames = default;
+            if (IsHostWithPlayersInCoop && CoopPlayerList != null)
+            {
+                playerNames = new string[CoopPlayerList.Count + 1];
+                playerNames[0] = LocalPeerDisplayName;
+                int playerIdx = 1;
+                foreach (var peer in CoopPlayerList)
+                {
+                    playerNames[playerIdx] = peer.GetDisplayName();
+                    playerIdx++;
+                }
+                return playerNames;
+            }
+            if (IsHostManager)
+            {
+                playerNames = new string[1];
+                playerNames[0] = LocalPeerDisplayName;
+                return playerNames;
+            }
+            return playerNames;
         }
 
         private void PlayersScrollViewBox()
         {
             using (var pScrollViewScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUILayout.Label($"All players currently in game:", GUI.skin.label);
+                GUI.color = Color.cyan;
+                GUILayout.Label($"Selected player: {SelectedPlayerName}", GUI.skin.label);
+                GUI.color = DefaultColor;
+
                 PlayerListScrollView();
             }
+        }
+
+        private void PlayerListScrollView()
+        {
+            PlayerListScrollViewPosition = GUILayout.BeginScrollView(PlayerListScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+
+            int _SelectedPlayerIndex = SelectedPlayerIndex;
+            string[] playerNames = GetPlayerNames();
+            if (playerNames != null)
+            {
+                SelectedPlayerName = playerNames[SelectedPlayerIndex];
+                SelectedPlayerIndex = GUILayout.SelectionGrid(SelectedPlayerIndex, playerNames, 3, GUI.skin.button);                
+            }
+
+            if (_SelectedPlayerIndex != SelectedPlayerIndex)
+            {
+                SelectedPlayerName = playerNames[SelectedPlayerIndex];
+            }
+
+            GUILayout.EndScrollView();
         }
 
         private void SendTexMessagesBox()
@@ -573,7 +650,7 @@ namespace ModManager
                     P2PPeer peerPlayerToKick = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
                     if (peerPlayerToKick != null)
                     {
-                        P2PLobbyMemberInfo playerToKickLobbyMemberInfo = GetPlayerToKickLobbyMemberInfo(peerPlayerToKick);
+                        P2PLobbyMemberInfo playerToKickLobbyMemberInfo = GetPlayerLobbyMemberInfo(peerPlayerToKick);
                         if (playerToKickLobbyMemberInfo != null)
                         {
                             P2PTransportLayer.Instance.KickLobbyMember(playerToKickLobbyMemberInfo);
@@ -584,7 +661,11 @@ namespace ModManager
                 }
                 else
                 {
-                    GUILayout.Label($"Please select a player first.", GUI.skin.label);
+                    if (SelectedPlayerName == P2PSession.Instance.LocalPeer.GetDisplayName())
+                    {
+                        ShowHUDBigInfo(HUDBigInfoMessage($"Are you trying to kick your self now OO? Impossibru!", MessageType.Warning, Color.red));
+                    }
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Please select a player first.", MessageType.Info, Color.yellow));
                 }
             }
             catch (Exception exc)
@@ -593,7 +674,7 @@ namespace ModManager
             }
         }
 
-        private static P2PLobbyMemberInfo GetPlayerToKickLobbyMemberInfo(P2PPeer peerPlayerToKick)
+        private static P2PLobbyMemberInfo GetPlayerLobbyMemberInfo(P2PPeer peerPlayerToKick)
         {
             return CoopLobbyMembers.Find(lm => lm.m_Address == peerPlayerToKick.m_Address);
         }
@@ -607,7 +688,7 @@ namespace ModManager
                     P2PPeer peerPlayerToChat = CoopPlayerList.Find(peer => peer.GetDisplayName().ToLower() == SelectedPlayerName.ToLower());
                     if (peerPlayerToChat != null)
                     {
-                        P2PLobbyMemberInfo playerToChatLobbyMemberInfo = GetPlayerToChatLobbyMemberInfo(peerPlayerToChat);
+                        P2PLobbyMemberInfo playerToChatLobbyMemberInfo = GetPlayerLobbyMemberInfo(peerPlayerToChat);
                         if (playerToChatLobbyMemberInfo != null)
                         {
                             P2PSession.Instance.SendTextChatMessage($"From: {GetHostPlayerName()} \n To {SelectedPlayerName}: \n" + TextChatMessage);
@@ -616,18 +697,17 @@ namespace ModManager
                 }
                 else
                 {
-                    GUILayout.Label($"Please select a player first.", GUI.skin.label);
+                    if (SelectedPlayerName == P2PSession.Instance.LocalPeer.GetDisplayName())
+                    {
+                        ShowHUDBigInfo(HUDBigInfoMessage($"Are you trying to talk to your self now OO? Madness inc!", MessageType.Warning, Color.red));
+                    }
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Please select a player first.",MessageType.Info, Color.yellow));
                 }
             }
             catch (Exception exc)
             {
                 HandleException(exc, nameof(OnClickSendMessageButton));
             }
-        }
-
-        private static P2PLobbyMemberInfo GetPlayerToChatLobbyMemberInfo(P2PPeer peerPlayerToChat)
-        {
-            return CoopLobbyMembers.Find(lm => lm.m_Address == peerPlayerToChat.m_Address);
         }
 
         private void AllModsListBox()
@@ -702,51 +782,89 @@ namespace ModManager
             return modListNames;
         }
 
-        public string[] GetPlayerNames()
-        {
-            string[] playerNames = default;
-            if (IsHostWithPlayersInCoop && CoopPlayerList != null)
-            {
-                playerNames = new string[CoopPlayerList.Count];
-                int playerIdx = 0;
-                
-                foreach (var peer in CoopPlayerList)
-                {
-                    playerNames[playerIdx] = peer.GetDisplayName();
-                    playerIdx++;
-                }
-                return playerNames;
-            }
-            if(IsHostManager)
-            {
-                playerNames = new string[1];
-                playerNames[0] = P2PSession.Instance.LocalPeer.GetDisplayName();
-                return playerNames;
-            }
-            return playerNames;
-        }
-
         private void ClientManagerBox()
         {
             using (var clientmngScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUI.color = Color.yellow;
                 GUILayout.Label("Client Manager: ", GUI.skin.label);
-                GUI.color = DefaultColor;
-
+                ClientCheatsBox();
                 ClientRequestBox();
+            }
+        }
+
+        private void ClientCheatsBox()
+        {
+            GUI.color = Color.cyan;
+            GUILayout.Label("Available cheats: ", GUI.skin.label);
+            GUI.color = DefaultColor;
+            if (IsModActiveForMultiplayer)
+            {
+                CheatOptionsBox();
+            }
+            else
+            {
+                using (var infoScope = new GUILayout.VerticalScope(GUI.skin.label))
+                {
+                    GUI.color = Color.yellow;
+                    GUILayout.Label(OnlyForSinglePlayerOrHostMessage(), GUI.skin.label);
+                    GUI.color = DefaultColor;
+                }
             }
         }
 
         private void ClientRequestBox()
         {
-            using (var clientrqtScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            using (var clientrqtScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUILayout.Label("Send chat request to host to allow mods (max. 3 to avoid spam.)", GUI.skin.label);
+                GUILayout.Label("Send chat request to host to allow mods (max. 6 to avoid spam.)", GUI.skin.label);
                 if (GUILayout.Button(GetClientCommandToUseMods(), GUI.skin.button))
                 {
                     OnClickRequestModsButton();
                 }
+                GUILayout.Label("Send chat request to host to allow Debug Mode (max. 6 to avoid spam.)", GUI.skin.label);
+                if (GUILayout.Button(GetClientCommandToUseDebugMode(), GUI.skin.button))
+                {
+                    OnClickRequestDebugModeButton();
+                }
+            }
+        }
+
+        private void OnClickRequestModsButton()
+        {
+            try
+            {
+                if (RequestsSendToHost >= 6)
+                {
+                    ShowHUDBigInfo(MaximumRequestsSendMessage(6));
+                    return;
+                }
+                P2PSession.Instance.SendTextChatMessage(GetClientCommandToUseMods());
+                ShowHUDBigInfo(RequestWasSentMessage(EnableModsAndCheatsClientRequest()));
+                RequestsSendToHost++;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(OnClickRequestModsButton));
+            }
+        }
+
+        private void OnClickRequestDebugModeButton()
+        {
+            try
+            {
+                if (RequestsSendToHost >= 6)
+                {
+                    ShowHUDBigInfo(MaximumRequestsSendMessage(3));
+                    return;
+                }
+                P2PSession.Instance.SendTextChatMessage(GetClientCommandToUseDebugMode());
+                ShowHUDBigInfo(RequestWasSentMessage(EnableDebugModeClientRequest()));
+                RequestsSendToHost++;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(OnClickRequestDebugModeButton));
             }
         }
 
@@ -759,7 +877,7 @@ namespace ModManager
 
                 ModOptionsBox();
 
-                if (GUILayout.Button(MpManagerText, GUI.skin.button))
+                if (GUILayout.Button(MpManagerTitle, GUI.skin.button))
                 {
                    ShowMpMngr = true;
                 }
@@ -805,8 +923,7 @@ namespace ModManager
                     ToggleShowUI(2);
                 }
                 if (ShowGameInfo)
-                {
-                
+                {                
                     GameInfoBox();
                 }
             }
@@ -928,7 +1045,7 @@ namespace ModManager
             }
             if (GUI.Button(new Rect(ModManagerScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
             {
-                CloseWindow(0);
+                ToggleShowUI(0);
             }
         }
 
@@ -942,7 +1059,7 @@ namespace ModManager
             }
             if (GUI.Button(new Rect(ModMpMngrScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
             {
-                CloseWindow(1);
+                ToggleShowUI(1);
             }
         }
 
@@ -978,7 +1095,7 @@ namespace ModManager
             }
             else
             {
-                ModManagerScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenTotalHeight);
+                ModMpMngrScreen = new Rect(ModMpScreenStartPositionX, ModMpScreenStartPositionY, ModMpScreenTotalWidth, ModMpScreenTotalHeight);
                 IsMpMinimized = false;
             }
             InitWindow();
@@ -1036,7 +1153,6 @@ namespace ModManager
 
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
             {
-                Instance.IsModActiveForMultiplayer = optionState;
                 onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Using mods and cheats has been");
                 onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
             }
@@ -1111,25 +1227,6 @@ namespace ModManager
             catch (Exception exc)
             {
                 HandleException(exc, nameof(SaveGameOnSwitch));
-            }
-        }
-
-        private void OnClickRequestModsButton()
-        {
-            try
-            {
-                if (RequestsSendToHost >= 3)
-                {
-                    ShowHUDBigInfo(MaximumRequestsSendMessage(3));
-                    return;
-                }
-                P2PSession.Instance.SendTextChatMessage(GetClientCommandToUseMods());
-                ShowHUDBigInfo(RequestWasSentMessage());
-                RequestsSendToHost++;
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(OnClickRequestModsButton));
             }
         }
 

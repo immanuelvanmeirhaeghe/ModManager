@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace ModManager.Data
+namespace ModManager.Data.Modding
 {
     /// <summary>
     /// Represents  a base class for a  mod 

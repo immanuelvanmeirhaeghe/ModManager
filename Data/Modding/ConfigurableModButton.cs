@@ -2,7 +2,7 @@
 using System.Reflection;
 using UnityEngine;
 
-namespace ModManager.Data
+namespace ModManager.Data.Modding
 {
     /// <summary>
     /// Represents a base class
@@ -12,9 +12,9 @@ namespace ModManager.Data
     public class ConfigurableModButton : IConfigurableModButton
     {
         public string ID { get; set; } = string.Empty;
-        
+
         public string KeyBinding { get; set; } = string.Empty;
-                
+
         public KeyCode ShortcutKey { get; set; } = KeyCode.None;
 
         public string Description { get; set; } = string.Empty;

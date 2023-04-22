@@ -10,9 +10,9 @@ namespace ModManager.Extensions
         {
             if (!ModManager.RequestInfoShown)
             {
-                ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));
-                GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.EnableDebugMode) && !ModManager.Disable;
+                ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));               
                 m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseMods()));
+                m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseDebugMode()));
             }
             base.OnShow();
             ModManager.Disable = true;
@@ -21,8 +21,7 @@ namespace ModManager.Extensions
         protected override void OnHide()
         {
             base.OnHide();
-            ModManager.Disable = false;
-            GreenHellGame.DEBUG = (ReplTools.AmIMaster() || ModManager.EnableDebugMode) && !ModManager.Disable;
+            ModManager.Disable = false;          
         }
 
         protected override void SendTextMessage()
@@ -45,14 +44,14 @@ namespace ModManager.Extensions
                     {
                         P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToAllowMods(ModManager.ChatRequestId)));
 
-                        m_History.StoreMessage(ModManager.RequestWasSentMessage());
+                        m_History.StoreMessage(ModManager.RequestWasSentMessage(ModManager.EnableModsAndCheatsClientRequest()));
                     }
 
                     if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseDebugMode().ToLower().Trim())
                     {
-                        P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToEnableDebug(ModManager.ChatRequestId)));
+                        P2PSession.Instance.SendTextChatMessage(ModManager.HostSystemInfoChatMessage(ModManager.GetHostCommandToUseDebugMode(ModManager.ChatRequestId)));
 
-                        m_History.StoreMessage(ModManager.RequestWasSentMessage());
+                        m_History.StoreMessage(ModManager.RequestWasSentMessage(ModManager.EnableDebugModeClientRequest()));
                     }                                    
                 }
                 else
