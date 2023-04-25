@@ -139,6 +139,138 @@ namespace ModManager
             stretchWidth = true,
             wordWrap = true        
         };
+        private Color DefaultContentColor = GUI.contentColor;
+        private Color DefaultBackGroundColor = GUI.backgroundColor;
+        private GUIStyle HeaderLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            fontSize = 16
+        };
+        private GUIStyle SubHeaderLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = HeaderLabel.alignment,
+            fontStyle = HeaderLabel.fontStyle,
+            fontSize = HeaderLabel.fontSize - 2,
+        };
+        private GUIStyle FormFieldNameLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontSize = 12,
+            stretchWidth = true
+        };
+        private GUIStyle FormFieldValueLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleRight,
+            fontSize = 12,
+            stretchWidth = true
+        };
+        private GUIStyle FormInputTextField => new GUIStyle(GUI.skin.textField)
+        {
+            alignment = TextAnchor.MiddleRight,
+            fontSize = 12,
+            stretchWidth = true,
+            stretchHeight = true,
+            wordWrap = true
+        };
+        private GUIStyle CommentLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontStyle = FontStyle.Italic,
+            fontSize = 12,
+            stretchWidth = true,
+            wordWrap = true
+        };
+        private GUIStyle TextLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontSize = 12,
+            stretchWidth = true,
+            wordWrap = true
+        };
+        private GUIStyle ToggleButton => new GUIStyle(GUI.skin.toggle)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 12,
+            stretchWidth = true
+        };
+
+        public GUIStyle EnabledDisabledInfoFieldValueLabel(GUIStyle style, bool enabled)
+        {
+            if (enabled)
+            {
+                style.normal.textColor = Color.green;
+            }
+            else
+            {
+                style.normal.textColor = DefaultColor;
+            }
+            return style;
+        }
+
+        public GUIStyle ColoredInfoHeaderLabel(GUIStyle style, Color color)
+        {
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredToggleValueTextLabel(bool enabled, Color enabledColor, Color disabledColor)
+        {
+            GUIStyle style = TextLabel;
+            style.normal.textColor = enabled ? enabledColor : disabledColor;
+            return style;
+        }
+
+        public GUIStyle ColoredToggleButton(bool activated, Color enabledColor, Color disabledColor)
+        {
+            GUIStyle style = ToggleButton;
+            style.active.textColor = activated ? enabledColor : disabledColor;
+            style.onActive.textColor = activated ? enabledColor : disabledColor;
+            style = GUI.skin.button;
+            return style;
+        }
+
+        public GUIStyle ColoredCommentLabel(Color color)
+        {
+            GUIStyle style = CommentLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredFieldNameLabel(Color color)
+        {
+            GUIStyle style = FormFieldNameLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredFieldValueLabel(Color color)
+        {
+            GUIStyle style = FormFieldValueLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredToggleFieldValueLabel(bool enabled, Color enabledColor, Color disabledColor)
+        {
+            GUIStyle style = FormFieldValueLabel;
+            style.normal.textColor = enabled ? enabledColor : disabledColor;
+            return style;
+        }
+
+        public GUIStyle ColoredHeaderLabel(Color color)
+        {
+            GUIStyle style = HeaderLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredSubHeaderLabel(Color color)
+        {
+            GUIStyle style = SubHeaderLabel;
+            style.normal.textColor = color;
+            return style;
+        }
 
         public static string OnlyForSinglePlayerOrHostMessage() 
             => $"Only available for single player or when host. Host {GetHostPlayerName()} can activate using {ModName}.";
@@ -406,25 +538,25 @@ namespace ModManager
             {
                 case 0:
                     ShowModManagerScreen = !ShowModManagerScreen;
-                    break;
+                    return;
                 case 1:
                     ShowModMpMngrScreen = !ShowModMpMngrScreen;
-                    break;
+                    return;
                 case 2:
                     ShowGameInfo = !ShowGameInfo;
-                    break; 
+                    return; 
                 case 3:
                     ShowMpInfo = !ShowMpInfo;
-                    break;
+                    return;
                 case 4:
                     ShowModInfo = !ShowModInfo;
-                    break;
+                    return;
                 case 5:
                     ShowInfo = !ShowInfo;
-                    break;
+                    return;
                 case 6:
                     ShowModList = !ShowModList;
-                    break;
+                    return;
                 default:
                     ShowModManagerScreen = !ShowModManagerScreen;
                     ShowModMpMngrScreen = !ShowModMpMngrScreen;
@@ -433,33 +565,24 @@ namespace ModManager
                     ShowModInfo = !ShowModInfo;
                     ShowInfo = !ShowInfo;
                     ShowModList = !ShowModList;
-                    break;
-            }
-            if (!ShowModManagerScreen && !ShowModMpMngrScreen)
-            {
-                EnableCursor(false);
-            }
-            else
-            {
-                EnableCursor(true);
-            }
+                    return;
+            }         
         }
 
         private void OnGUI()
         {
-            if (ShowModManagerScreen || ShowModMpMngrScreen)
+            if (ShowModManagerScreen)
             {
                 InitData();
                 InitSkinUI();
-                if (ShowModManagerScreen)
-                {
-                    InitModManagerScreen();
-                }
-                if (ShowModMpMngrScreen)
-                {
-                    InittModMpMngrScreen();
-                }
-            }           
+                InitModManagerScreen();
+            }
+            if (ShowModMpMngrScreen)
+            {
+                InitData();
+                InitSkinUI();
+                InittModMpMngrScreen();
+            }
         }
 
         private void InitModManagerScreen()
@@ -872,7 +995,7 @@ namespace ModManager
             GUILayout.Label("Available cheats", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
             if (IsModActiveForMultiplayer)
             {
-                CheatOptionsBox();
+                CheatManagerBox();
             }
             else
             {
@@ -942,7 +1065,9 @@ namespace ModManager
         {
             using (var hostmngScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUILayout.Label("Host Manager", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.yellow));
+                GUILayout.Label($"Host Manager", ColoredHeaderLabel(Color.yellow));
+
+                GUILayout.Label($"Host Options", ColoredSubHeaderLabel(Color.yellow)); ;
 
                 HostGameInfoBox();
 
@@ -975,7 +1100,7 @@ namespace ModManager
 
         private void HostGameInfoBox()
         {
-            using (var hgibScope = new GUILayout.VerticalScope(GUI.skin.box))
+            using (new GUILayout.VerticalScope(GUI.skin.box))
             {
                 if (GUILayout.Button("Game Info", GUI.skin.button))
                 {
@@ -990,20 +1115,22 @@ namespace ModManager
 
         private void ModOptionsBox()
         {      
-            using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+            using (new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUILayout.Label($"{ModName} Options", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label(ModName, ColoredHeaderLabel(Color.yellow));
+
+                GUILayout.Label($"{ModName} Options", ColoredSubHeaderLabel(Color.yellow));
 
                 AllowModsAndCheatsOption();
                 if (AllowModsAndCheatsForMultiplayer)
                 {
-                    CheatOptionsBox();
+                    CheatManagerBox();
                 }
                 else
                 {
-                    using (var infoScope = new GUILayout.VerticalScope(GUI.skin.label))
+                    using ( new GUILayout.VerticalScope(GUI.skin.label))
                     {
-                        GUILayout.Label($"To use cheats, first enable {nameof(AllowModsAndCheatsForMultiplayer)} ", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.yellow));                     
+                        GUILayout.Label($"To use, first enable cheats in the options above.", ColoredCommentLabel(Color.yellow));
                     }
                 }
 
@@ -1015,36 +1142,20 @@ namespace ModManager
             }
         }
 
-        public GUIStyle EnabledDisabledInfoFieldValueLabel(GUIStyle style, bool enabled)
+        private void CheatManagerBox()
         {
-            if (enabled)
+            using (new GUILayout.VerticalScope(GUI.skin.box))
             {
-                style.normal.textColor = Color.green;
-            }
-            else
-            {
-                style.normal.textColor = DefaultColor;
-            }
-            return style;
-        }
+                GUILayout.Label($"Cheats manager", ColoredHeaderLabel(Color.yellow));
 
-        public GUIStyle ColoredInfoHeaderLabel(GUIStyle style, Color color)
-        {
-            style.normal.textColor = color;
-            return style;
-        }
+                GUILayout.Label($"Cheat Options", ColoredSubHeaderLabel(Color.yellow));
 
-        private void CheatOptionsBox()
-        {
-            using (var optscheatsHScope = new GUILayout.VerticalScope(GUI.skin.box))
-            {
-                GUILayout.Label($"Cheat Options", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
-                
-                Cheats.m_OneShotAI = GUILayout.Toggle(Cheats.m_OneShotAI, "One shot AI cheat on / off?", GUI.skin.toggle);
-                Cheats.m_OneShotConstructions = GUILayout.Toggle(Cheats.m_OneShotConstructions, "One shot constructions cheat on / off?", GUI.skin.toggle);
-                Cheats.m_GhostMode = GUILayout.Toggle(Cheats.m_GhostMode, "Ghost mode cheat on / off?", GUI.skin.toggle);
-                Cheats.m_GodMode = GUILayout.Toggle(Cheats.m_GodMode, "God mode cheat on / off?", GUI.skin.toggle);
-                Cheats.m_ImmortalItems = GUILayout.Toggle(Cheats.m_ImmortalItems, "No item decay cheat on / off?", GUI.skin.toggle);
+                Cheats.m_OneShotAI = GUILayout.Toggle(Cheats.m_OneShotAI, "One shot AI cheat on / off", GUI.skin.toggle);
+                Cheats.m_OneShotConstructions = GUILayout.Toggle(Cheats.m_OneShotConstructions, "One shot constructions cheat on / off", GUI.skin.toggle);
+                Cheats.m_GhostMode = GUILayout.Toggle(Cheats.m_GhostMode, "Ghost mode cheat on / off", GUI.skin.toggle);
+                Cheats.m_GodMode = GUILayout.Toggle(Cheats.m_GodMode, "God mode cheat on / off", GUI.skin.toggle);
+                Cheats.m_ImmortalItems = GUILayout.Toggle(Cheats.m_ImmortalItems, "No item decay cheat on / off", GUI.skin.toggle);
+                Cheats.m_InstantBuild = GUILayout.Toggle(Cheats.m_InstantBuild, "Instant build cheat on / off", GUI.skin.toggle);
             }
         }
 
@@ -1052,57 +1163,57 @@ namespace ModManager
         {
             using (var gameinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GameInfoScrollViewPosition = GUILayout.BeginScrollView(GameInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+                GameInfoScrollViewPosition = GUILayout.BeginScrollView(GameInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
 
-                GUILayout.Label($"{nameof(GreenHellGame)}", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
-                
+                GUILayout.Label($"{nameof(GreenHellGame)}", ColoredSubHeaderLabel(Color.cyan));
+
                 using (var steamappScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(SteamAppId)}: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{SteamAppId}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(SteamAppId)}: ", FormFieldNameLabel);
+                    GUILayout.Label($"{SteamAppId}", FormFieldValueLabel);
                 }
                 using (var gghmodestartScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(GameModeAtStart)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{GameModeAtStart}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(GameModeAtStart)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{GameModeAtStart}", FormFieldValueLabel);
                 }
                 using (var gghmodevisstartScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(GameVisibilityAtStart)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{GameVisibilityAtStart}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(GameVisibilityAtStart)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{GameVisibilityAtStart}", FormFieldValueLabel);
                 }
                 using (var gghsesvisstartScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(GameVisibilityAtSessionStart)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{GameVisibilityAtSessionStart}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(GameVisibilityAtSessionStart)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{GameVisibilityAtSessionStart}", FormFieldValueLabel);
                 }
                 using (var gghmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(GameMode)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{GreenHellGame.Instance.m_GHGameMode}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(GameMode)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{GreenHellGame.Instance.m_GHGameMode}", FormFieldValueLabel);
                 }
                 using (var gmvisScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(P2PGameVisibility)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{GreenHellGame.Instance.m_Settings.m_GameVisibility}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(P2PGameVisibility)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{GreenHellGame.Instance.m_Settings.m_GameVisibility}", FormFieldValueLabel);
                 }
 
                 GUILayout.Label($"{nameof(MainLevel)}", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
 
                 using (var mlevelggmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(GameMode)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{MainLevel.Instance.m_GameMode}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(GameMode)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{MainLevel.Instance.m_GameMode}", FormFieldValueLabel);
                 }
                 using (var mleveljoinScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_CanJoinSession)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(MainLevel.Instance.m_CanJoinSession ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, MainLevel.Instance.m_CanJoinSession));
+                    GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_CanJoinSession)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(MainLevel.Instance.m_CanJoinSession ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel( MainLevel.Instance.m_CanJoinSession, Color.green,  DefaultColor));
                 }
                 using (var mleveltutScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_Tutorial)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(MainLevel.Instance.m_Tutorial ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, MainLevel.Instance.m_Tutorial));
+                    GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_Tutorial)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(MainLevel.Instance.m_Tutorial ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(MainLevel.Instance.m_Tutorial, Color.green, DefaultColor));
                 }
 
                 GUILayout.Label(ModName, ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
@@ -1110,72 +1221,72 @@ namespace ModManager
                 using (var ngmtScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     string NextGameMode = IsMultiplayerGameModeActive ? "Switch to singleplayer" : "Switch to multiplayer";
-                    GUILayout.Label($"{nameof(NextGameMode)}: ", InfoFieldNameLabel);
-                    GUILayout.Label(NextGameMode, InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(NextGameMode)}: ", FormFieldNameLabel);
+                    GUILayout.Label(NextGameMode, FormFieldValueLabel);
                 }
                 using (var isammodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IsMultiplayerGameModeActive)}: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{(IsMultiplayerGameModeActive ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, IsMultiplayerGameModeActive));
+                    GUILayout.Label($"{nameof(IsMultiplayerGameModeActive)}: ", FormFieldNameLabel);
+                    GUILayout.Label($"{(IsMultiplayerGameModeActive ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(IsMultiplayerGameModeActive, Color.green, DefaultColor));
                 }
                 using (var aspmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{(IsModActiveForSingleplayer ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, IsModActiveForSingleplayer));
+                    GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: ", FormFieldNameLabel);
+                    GUILayout.Label($"{(IsModActiveForSingleplayer ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(IsModActiveForSingleplayer, Color.green, DefaultColor));
                 }               
                 using (var ampmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}", InfoFieldNameLabel);
-                    GUILayout.Label($"{(IsModActiveForMultiplayer ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, IsModActiveForMultiplayer));
+                    GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}", FormFieldNameLabel);
+                    GUILayout.Label($"{(IsModActiveForMultiplayer ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(IsModActiveForMultiplayer, Color.green, DefaultColor));
                 }                
                 using (var permScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, AllowModsAndCheatsForMultiplayer));
+                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(AllowModsAndCheatsForMultiplayer, Color.green, DefaultColor));
                 }
                 using (var ghdebugmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(GreenHellGame.DEBUG)} Mode: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{(GreenHellGame.DEBUG ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, GreenHellGame.DEBUG));
+                    GUILayout.Label($"{nameof(GreenHellGame.DEBUG)} Mode: ", FormFieldNameLabel);
+                    GUILayout.Label($"{(GreenHellGame.DEBUG ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(GreenHellGame.DEBUG, Color.green, DefaultColor));
                 }
                 using (var debugmodeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(EnableDebugMode)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, EnableDebugMode));
+                    GUILayout.Label($"{nameof(EnableDebugMode)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(EnableDebugMode, Color.green, DefaultColor));
                 }
        
                 GUILayout.Label($"{nameof(Cheats)}", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
 
                 using (var cheatsOSAIScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotAI)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_OneShotAI ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_OneShotAI));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotAI)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_OneShotAI ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(Cheats.m_OneShotAI, Color.green, DefaultColor));
                 }
                 using (var cheatsOSCScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotConstructions)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_OneShotConstructions ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_OneShotConstructions));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotConstructions)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_OneShotConstructions ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(Cheats.m_OneShotConstructions, Color.green, DefaultColor));
                 }
                
                 using (var cheatsIBScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_InstantBuild)}: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_InstantBuild ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_InstantBuild));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_InstantBuild)}: ", FormFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_InstantBuild ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(Cheats.m_InstantBuild, Color.green, DefaultColor));
                 }
                 using (var cheatsGhostModeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GhostMode)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_GhostMode ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_GhostMode));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GhostMode)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_GhostMode ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(Cheats.m_GhostMode, Color.green, DefaultColor));
                 }
                 using (var cheatsGodScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GodMode)}: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_GodMode ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_GodMode));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_GodMode)}: ", FormFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_GodMode ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(Cheats.m_GodMode, Color.green, DefaultColor));
                 }
                 using (var cheatsDecayScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_ImmortalItems)}: ", InfoFieldNameLabel);
-                    GUILayout.Label($"{(Cheats.m_ImmortalItems ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, Cheats.m_ImmortalItems));
+                    GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_ImmortalItems)}: ", FormFieldNameLabel);
+                    GUILayout.Label($"{(Cheats.m_ImmortalItems ? "enabled" : "disabled")}", ColoredToggleFieldValueLabel(Cheats.m_ImmortalItems, Color.green, DefaultColor));
                 }
 
                 GUILayout.EndScrollView();
@@ -1191,49 +1302,49 @@ namespace ModManager
             }
             using (var multiplayerinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                MpInfoScrollViewPosition = GUILayout.BeginScrollView(MpInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+                MpInfoScrollViewPosition = GUILayout.BeginScrollView(MpInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
 
-                GUILayout.Label("Multiplayer info", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label("Multiplayer info", ColoredSubHeaderLabel( Color.cyan));
 
                 using (var lhdisScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(LocalHostDisplayName)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{LocalHostDisplayName}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(LocalHostDisplayName)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{LocalHostDisplayName}", FormFieldValueLabel);
                 }
                 using (var pctScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(PlayerCount)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{PlayerCount}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(PlayerCount)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{PlayerCount}", FormFieldValueLabel);
                 }
                 using (var ihmScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IsHostManager)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(IsHostManager ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, IsHostManager));
+                    GUILayout.Label($"{nameof(IsHostManager)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(IsHostManager ? "enabled" : "disabled")}",ColoredToggleFieldValueLabel(IsHostManager, Color.green, DefaultColor));
                 }               
                 using (var ihwpcScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(IsHostWithPlayersInCoop ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, IsHostWithPlayersInCoop));
+                    GUILayout.Label($"{nameof(IsHostWithPlayersInCoop)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(IsHostWithPlayersInCoop ? "enabled" : "disabled")}",ColoredToggleFieldValueLabel( IsHostWithPlayersInCoop, Color.green, DefaultColor));
                 }               
                 using (var amacScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, AllowModsAndCheatsForMultiplayer));
+                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}",ColoredToggleFieldValueLabel( AllowModsAndCheatsForMultiplayer, Color.green, DefaultColor));
                 }               
                 using (var hctamdScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Host command to allow mods:", InfoFieldNameLabel);
-                    GUILayout.Label($"{HostCommandToAllowModsWithRequestId()}", InfoFieldValueLabel);
+                    GUILayout.Label($"Host command to allow mods:", FormFieldNameLabel);
+                    GUILayout.Label($"{HostCommandToAllowModsWithRequestId()}", FormFieldValueLabel);
                 }
                 using (var edmcScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(EnableDebugMode)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}", EnabledDisabledInfoFieldValueLabel(InfoFieldValueLabel, EnableDebugMode));
+                    GUILayout.Label($"{nameof(EnableDebugMode)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}",ColoredToggleFieldValueLabel (EnableDebugMode, Color.green, DefaultColor));
                 }
                 using (var hctedScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Host command to enable Debug Mode:", InfoFieldNameLabel);
-                    GUILayout.Label($"{HostCommandToEnableDebugWithRequestId()}", InfoFieldValueLabel);
+                    GUILayout.Label($"Host command to enable Debug Mode:", FormFieldNameLabel);
+                    GUILayout.Label($"{HostCommandToEnableDebugWithRequestId()}", FormFieldValueLabel);
                 }               
 
                 GUILayout.EndScrollView();
@@ -1244,44 +1355,44 @@ namespace ModManager
         {
             using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
 
-                GUILayout.Label("Mod info", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label("Mod Info", ColoredSubHeaderLabel(Color.cyan));
 
                 using (var gidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.GameID)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.GameID}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.GameID)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.GameID}", FormFieldValueLabel);
                 }
                 using (var midScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.ID)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.ID}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.ID)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.ID}", FormFieldValueLabel);
                 }
                 using (var uidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.UniqueID)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.UniqueID}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.UniqueID)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.UniqueID}", FormFieldValueLabel);
                 }
                 using (var versionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(ConfigurableMod.Version)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.Version}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.Version)}:", FormFieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.Version}", FormFieldValueLabel);
                 }
 
-                GUILayout.Label("Mod buttons info", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label("Buttons Info", ColoredSubHeaderLabel(Color.cyan));
 
                 foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                 {
                     using (var btnidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{nameof(ConfigurableModButton.ID)}:", InfoFieldNameLabel);
-                        GUILayout.Label($"{configurableModButton.ID}", InfoFieldValueLabel);
+                        GUILayout.Label($"{nameof(IConfigurableModButton.ID)}:", FormFieldNameLabel);
+                        GUILayout.Label($"{configurableModButton.ID}", FormFieldValueLabel);
                     }
                     using (var btnbindScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{nameof(ConfigurableModButton.KeyBinding)}:", InfoFieldNameLabel);
-                        GUILayout.Label($"{configurableModButton.KeyBinding}", InfoFieldValueLabel);
+                        GUILayout.Label($"{nameof(IConfigurableModButton.KeyBinding)}:", FormFieldNameLabel);
+                        GUILayout.Label($"{configurableModButton.KeyBinding}", FormFieldValueLabel);
                     }
                 }
 
@@ -1430,6 +1541,7 @@ namespace ModManager
             {
                 GreenHellGame.Instance.m_Settings.m_GameVisibility = IsMultiplayerGameModeActive == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
                 GreenHellGame.Instance.m_SessionJoinHelper = SessionJoinHelperAtStart ?? new SessionJoinHelper();
+                GreenHellGame.FORCE_SURVIVAL = true;
                 MainLevel.Instance.m_CanJoinSession = CanJoinSessionAtStart;
                 MainLevel.Instance.m_Tutorial = false;
                 if (IsMultiplayerGameModeActive && ReplTools.IsCoopEnabled())
