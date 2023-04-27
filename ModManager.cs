@@ -30,9 +30,9 @@ namespace ModManager
       
         private static readonly string ModName = nameof(ModManager);
 
-        private static float ModManagerScreenTotalWidth { get; set; } = 700f;
+        private static float ModManagerScreenTotalWidth { get; set; } = 800f;
         private static float ModManagerScreenTotalHeight { get; set; } = 600f;
-        private static float ModManagerScreenMinWidth { get; set; } = 700f;
+        private static float ModManagerScreenMinWidth { get; set; } = 800f;
         private static float ModManagerScreenMinHeight { get; set; } = 50f;
         private static float ModManagerScreenMaxWidth { get; set; } = Screen.width;
         private static float ModManagerScreenMaxHeight { get; set; } = Screen.height;
