@@ -266,7 +266,7 @@ namespace ModManager
             }
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             Instance = this;
         }
