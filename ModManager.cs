@@ -30,9 +30,9 @@ namespace ModManager
       
         private static readonly string ModName = nameof(ModManager);
 
-        private static float ModManagerScreenTotalWidth { get; set; } = 800f;
+        private static float ModManagerScreenTotalWidth { get; set; } = 700f;
         private static float ModManagerScreenTotalHeight { get; set; } = 600f;
-        private static float ModManagerScreenMinWidth { get; set; } = 800f;
+        private static float ModManagerScreenMinWidth { get; set; } = 700f;
         private static float ModManagerScreenMinHeight { get; set; } = 50f;
         private static float ModManagerScreenMaxWidth { get; set; } = Screen.width;
         private static float ModManagerScreenMaxHeight { get; set; } = Screen.height;
@@ -276,7 +276,7 @@ namespace ModManager
             Instance = null;
         }
 
-        private void Start()
+        protected virtual void Start()
         {
             onOptionToggled += ModManager_onOptionToggled;
             onPermissionValueChanged += ModManager_onPermissionValueChanged;
@@ -361,7 +361,7 @@ namespace ModManager
             ShowHUDBigInfo(FlagStateChangedMessage(optionValue, optionText));
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             if (Input.GetKeyDown(ShortcutKey))
             {
@@ -421,17 +421,17 @@ namespace ModManager
             {
                 InitData();
                 InitSkinUI();
-                InitModManagerScreen();
+                ShowModManagerWindow();
             }
             if (ShowModMpMngrScreen)
             {
                 InitData();
                 InitSkinUI();
-                InittModMpMngrScreen();
+                ShowModMpMngrWindow();
             }
         }
 
-        private void InitModManagerScreen()
+        private void ShowModManagerWindow()
         {
             if (ModManagerScreenId < 0 || ModManagerScreenId == ModMpMngrScreenId)
             {
@@ -451,7 +451,7 @@ namespace ModManager
                                                GUILayout.MaxHeight(ModManagerScreenMaxHeight));
         }
 
-        private void InittModMpMngrScreen()
+        private void ShowModMpMngrWindow()
         {
             if (ModMpMngrScreenId < 0 || ModMpMngrScreenId == ModManagerScreenId)
             {
@@ -471,11 +471,12 @@ namespace ModManager
                    GUILayout.MaxHeight(ModMpMngrScreenMaxHeight));
         }
 
-        private void InitData()
+        protected virtual void InitData()
         {
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
             LocalCursorManager = CursorManager.Get();
+            LocalStylingManager = StylingManager.Get();
             CoopPlayerList = P2PSession.Instance.m_RemotePeers?.ToList();
             InitPermissionChanged();
         }
@@ -1308,7 +1309,7 @@ namespace ModManager
                 ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenTotalHeight);
                 IsModManagerScreenMinimized = false;
             }
-            InitModManagerScreen();
+            ShowModManagerWindow();
         }
 
         private void CollapseMpWindow()
@@ -1327,7 +1328,7 @@ namespace ModManager
                 ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
                 IsModMpMngrScreenMinimized = false;
             }
-            InittModMpMngrScreen();
+            ShowModMpMngrWindow();
         }
 
         private void AllowModsAndCheatsOption()

@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace ModManager.Managers
 {
+
     public class StylingManager : MonoBehaviour
     {
         private static StylingManager Instance;
@@ -36,7 +37,7 @@ namespace ModManager.Managers
         }
 
         protected virtual void InitData()
-        {  }
+        { }
 
         private void HandleException(Exception exc, string methodName)
         {
@@ -89,7 +90,7 @@ namespace ModManager.Managers
         {
             alignment = TextAnchor.MiddleRight,
             fontSize = 12,
-            stretchWidth = true,            
+            stretchWidth = true,
             wordWrap = true
         };
         public GUIStyle CommentLabel => new GUIStyle(GUI.skin.label)
