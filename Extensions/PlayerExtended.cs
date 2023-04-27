@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using ModManager.Managers;
+using UnityEngine;
 
 namespace ModManager.Extensions
 {
@@ -8,6 +9,7 @@ namespace ModManager.Extensions
         {
             base.Start();
             new GameObject($"__{nameof(ModManager)}__").AddComponent<ModManager>();
+            new GameObject($"__{nameof(StylingManager)}__").AddComponent<StylingManager>();
         }
     }
 }
