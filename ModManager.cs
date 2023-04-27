@@ -30,16 +30,16 @@ namespace ModManager
       
         private static readonly string ModName = nameof(ModManager);
 
-        private static float ModManagerScreenTotalWidth { get; set; } = 650f;
+        private static float ModManagerScreenTotalWidth { get; set; } = 700f;
         private static float ModManagerScreenTotalHeight { get; set; } = 600f;
-        private static float ModManagerScreenMinWidth { get; set; } = 650f;
+        private static float ModManagerScreenMinWidth { get; set; } = 700f;
         private static float ModManagerScreenMinHeight { get; set; } = 50f;
         private static float ModManagerScreenMaxWidth { get; set; } = Screen.width;
         private static float ModManagerScreenMaxHeight { get; set; } = Screen.height;
         private static float ModManagerScreenStartPositionX { get; set; } = Screen.width / 2f;
         private static float ModManagerScreenStartPositionY { get; set; } = Screen.height / 2f;
-        private static bool IsMinimized { get; set; } = false;
-        private static int ModManagerScreenId { get; set; } = -2;
+        private static bool IsModManagerScreenMinimized { get; set; } = false;
+        private static int ModManagerScreenId { get; set; }
 
         private static float ModMpMngrScreenTotalWidth { get; set; } = 500f;
         private static float ModMpMngrScreenTotalHeight { get; set; } = 350f;
@@ -49,8 +49,8 @@ namespace ModManager
         private static float ModMpMngrScreenMaxHeight { get; set; } = Screen.height;
         private static float ModMpMngrScreenStartPositionX { get; set; } = Screen.width / 2.5f;
         private static float ModMpMngrScreenStartPositionY { get; set; } = Screen.height / 2.5f;
-        private static bool IsMpMinimized { get; set; }
-        private static int ModMpMngrScreenId { get; set; } = -1;
+        private static bool IsModMpMngrScreenMinimized { get; set; }
+        private static int ModMpMngrScreenId { get; set; }
 
         private static CursorManager LocalCursorManager;
         private static HUDManager LocalHUDManager;
@@ -542,7 +542,7 @@ namespace ModManager
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ScreenMenuBox();
-                if (!IsMinimized)
+                if (!IsModManagerScreenMinimized)
                 {
                     if (IsHostManager)
                     {
@@ -573,7 +573,7 @@ namespace ModManager
             using (var modplayersScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 MpScreenMenuBox();
-                if (!IsMpMinimized)
+                if (!IsModMpMngrScreenMinimized)
                 {
                     if (GUILayout.Button("Multiplayer Info", GUI.skin.button))
                     {
@@ -1266,7 +1266,7 @@ namespace ModManager
 
         private void ScreenMenuBox()
         {
-            string collapseButtonText = IsMinimized ? "O" : "-";
+            string collapseButtonText = IsModManagerScreenMinimized ? "O" : "-";
 
             if (GUI.Button(new Rect(ModManagerScreen.width - 40f, 0f, 20f, 20f), collapseButtonText, GUI.skin.button))
             {
@@ -1280,7 +1280,7 @@ namespace ModManager
 
         private void MpScreenMenuBox()
         {
-            string collapseButtonText = IsMpMinimized ? "O" : "-";
+            string collapseButtonText = IsModMpMngrScreenMinimized ? "O" : "-";
 
             if (GUI.Button(new Rect(ModMpMngrScreen.width - 40f, 0f, 20f, 20f), collapseButtonText, GUI.skin.button))
             {
@@ -1298,15 +1298,15 @@ namespace ModManager
             ModManagerScreenStartPositionY = ModManagerScreen.y;
             ModManagerScreenTotalWidth = ModManagerScreen.width;
 
-            if (!IsMinimized)
+            if (!IsModManagerScreenMinimized)
             {
                 ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenMinHeight);
-                IsMinimized = true;
+                IsModManagerScreenMinimized = true;
             }
             else
             {
                 ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenTotalHeight);
-                IsMinimized = false;
+                IsModManagerScreenMinimized = false;
             }
             InitModManagerScreen();
         }
@@ -1317,15 +1317,15 @@ namespace ModManager
             ModMpMngrScreenStartPositionY = ModMpMngrScreen.y;
             ModMpMngrScreenTotalWidth = ModMpMngrScreen.width;
 
-            if (!IsMpMinimized)
+            if (!IsModMpMngrScreenMinimized)
             {
                 ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenMinHeight);
-                IsMpMinimized = true;
+                IsModMpMngrScreenMinimized = true;
             }
             else
             {
                 ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
-                IsMpMinimized = false;
+                IsModMpMngrScreenMinimized = false;
             }
             InittModMpMngrScreen();
         }
