@@ -82,7 +82,7 @@ namespace ModManager.Managers
         protected virtual void InitData()
         {
             ModList = GetModList();
-            ModNamesList = GetModNamesList(false);
+            ModNamesList = GetModNamesList();
         }
 
         public List<IConfigurableMod> GetModList()
@@ -135,23 +135,21 @@ namespace ModManager.Managers
             }
         }
 
-        public string[] GetModNamesList(bool refresh = false)
+        public string[] GetModNamesList()
         {
             string[] modListNames = default;
+            List<IConfigurableMod> modList = default;
+            int modIDIdx = 0;
+
             try
             {
-                if (refresh)
-                {
-                    ModList = GetModList();
-                    modListNames = new string[ModList.Count];
-                }
-               
-                int modIDIdx = 0;
-                foreach (var configurableMod in ModList)
+                modList = GetModList();
+                foreach (var configurableMod in modList)
                 {
                     modListNames[modIDIdx] = configurableMod.ID;
                     modIDIdx++;
                 }
+             
                 return modListNames;
             }
             catch (Exception exc)

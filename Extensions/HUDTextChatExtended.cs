@@ -10,7 +10,7 @@ namespace ModManager.Extensions
         {
             if (!ModManager.RequestInfoShown)
             {
-                ModManager.Get().ToggleModOption(true, nameof(ModManager.RequestInfoShown));               
+                ModManager.ToggleModOption(true, nameof(ModManager.RequestInfoShown));               
                 m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseMods()));
                 m_History.StoreMessage(ModManager.ClientSystemInfoChatMessage(ModManager.GetClientCommandToUseDebugMode()));
             }

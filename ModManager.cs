@@ -1289,7 +1289,7 @@ namespace ModManager
             }          
         }
 
-        public void ToggleModOption(bool optionState, string optionName)
+        public static void ToggleModOption(bool optionState, string optionName)
         {
             if (optionName == nameof(GreenHellGame.DEBUG) && optionState != GreenHellGame.DEBUG)
             {
