@@ -362,6 +362,8 @@
     <Compile Include="Data\Modding\ConfigurableModButton.cs" />
     <Compile Include="Data\Enums.cs" />
     <Compile Include="Data\Interfaces\IConfigurableModButton.cs" />
+    <Compile Include="Managers\MultiplayerManager.cs" />
+    <Compile Include="Managers\ModdingManager.cs" />
     <Compile Include="Managers\StylingManager.cs" />
     <Compile Include="ModManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

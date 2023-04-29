@@ -23,6 +23,16 @@ namespace ModManager.Managers
 
         public static StylingManager Get() => Instance;
 
+        protected virtual void Awake()
+        {
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            Instance = null;
+        }
+
         protected virtual void Start()
         {
             InitData();
@@ -49,7 +59,19 @@ namespace ModManager.Managers
         public Color DefaultColor = GUI.color;
         public Color DefaultContentColor = GUI.contentColor;
         public Color DefaultBackGroundColor = GUI.backgroundColor;
-
+        public GUIStyle SelectedGridButton => new GUIStyle(GUI.skin.button)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = GUI.skin.button.fontSize,
+            border = GUI.skin.button.border,
+            font = GUI.skin.button.font,
+            clipping = GUI.skin.button.clipping,
+            margin = GUI.skin.button.margin,
+            padding = GUI.skin.button.padding,
+            contentOffset = GUI.skin.button.contentOffset,
+            active = GUI.skin.button.active,
+           stretchWidth = true
+        };
         public GUIStyle WindowBox => new GUIStyle(GUI.skin.box)
         {
             stretchWidth = true,
@@ -114,6 +136,17 @@ namespace ModManager.Managers
             fontSize = 12,
             stretchWidth = true
         };
+        public GUIStyle ColoredSelectedGridButton(bool isSelectedIndex)
+        {
+            GUIStyle style = SelectedGridButton;
+
+            style.normal.textColor = isSelectedIndex ? Color.cyan : DefaultColor;
+            style.onNormal.textColor = isSelectedIndex ? Color.cyan : DefaultColor;            
+            style.hover.textColor = isSelectedIndex ? Color.cyan : DefaultColor;
+            style.onHover.textColor = isSelectedIndex ? Color.cyan : DefaultColor;
+
+            return style;
+        }
         public GUIStyle ColoredToggleValueTextLabel(bool enabled, Color enabledColor, Color disabledColor)
         {
             GUIStyle style = TextLabel;
@@ -123,9 +156,12 @@ namespace ModManager.Managers
         public GUIStyle ColoredToggleButton(bool activated, Color enabledColor, Color disabledColor)
         {
             GUIStyle style = ToggleButton;
-            style.active.textColor = activated ? enabledColor : disabledColor;
-            style.onActive.textColor = activated ? enabledColor : disabledColor;
-            style = GUI.skin.button;
+
+            style.normal.textColor = activated ? enabledColor : disabledColor;
+            style.onNormal.textColor = activated ? enabledColor : disabledColor;
+            style.hover.textColor = activated ? enabledColor : disabledColor;
+            style.onHover.textColor = activated ? enabledColor : disabledColor;
+
             return style;
         }
         public GUIStyle ColoredCommentLabel(Color color)
