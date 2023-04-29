@@ -28,7 +28,7 @@ namespace ModManager.Extensions
         {
             string fieldTextMessage = m_Field.text.Trim();
             bool flag1 = ModManager.AllowModsAndCheatsForMultiplayer;
-            bool flag2 = ModManager.EnableDebugMode;
+            bool flag2 = ModManager.IsDebugModeEnabled;
 
             if (fieldTextMessage.Length > 0)
             {

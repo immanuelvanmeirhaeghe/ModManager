@@ -193,7 +193,7 @@ namespace ModManager.Managers
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(SwitchGameMode));
+                HandleException(exc, nameof(SwitchGameMode)+$"({debug})");
             }
         }
 
@@ -249,6 +249,8 @@ namespace ModManager.Managers
 
         public void OnSurvival(bool mp)
         {
+            Log.Write($"{nameof(OnSurvival)}({mp})");
+
             P2PSession.Instance.SetGameVisibility(mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
             GreenHellGame.Instance.m_Settings.m_GameVisibility = (mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
             ScenarioManager.Get().SetSkipTutorial(set: true);
@@ -278,6 +280,8 @@ namespace ModManager.Managers
               
         public void OnPVEwithMaps()
         {
+            Log.Write($"{nameof(OnPVEwithMaps)}({string.Empty})");
+
             P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Friends);
             GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Friends;
             ScenarioManager.Get().SetSkipTutorial(set: true);
@@ -303,6 +307,8 @@ namespace ModManager.Managers
 
         public void OnDebug(bool mp)
         {
+            Log.Write($"{nameof(OnDebug)}({mp})");
+
             P2PSession.Instance.SetGameVisibility(mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
             GreenHellGame.Instance.m_Settings.m_GameVisibility = (mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
             Player.Get().UnlockMap();
@@ -316,8 +322,7 @@ namespace ModManager.Managers
             PlayerInjuryModule.Get().UnlockAllInjuryState();
             PlayerInjuryModule.Get().UnlockAllInjuryStateTreatment();
             MapTab.Get().UnlockAll(achevements_events: false);
-            MainLevel.Instance.m_GameMode = GameMode.Debug;
-            GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
+
             MainLevel.Instance.Initialize();
             MenuInGameManager.Get().HideMenu();
             StartRainforestAmbienceMultisample();

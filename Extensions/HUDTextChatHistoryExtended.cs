@@ -16,8 +16,8 @@
             ModManager.AllowModsAndCheatsForMultiplayer = optionValue;
             ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
 
-            ModManager.EnableDebugMode = optionValue;
-            ModManager.ToggleModOption(optionValue, nameof(ModManager.EnableDebugMode));
+            ModManager.IsDebugModeEnabled = optionValue;
+            ModManager.ToggleModOption(optionValue, nameof(ModManager.IsDebugModeEnabled));
         }
 
         protected override void Awake()
@@ -40,7 +40,7 @@
             bool isMaster = l_P2PPeer.IsMaster();
             string p2pPeerName = l_P2PPeer.GetDisplayName();
             bool flag1 = ModManager.AllowModsAndCheatsForMultiplayer;
-            bool flag2 = ModManager.EnableDebugMode;
+            bool flag2 = ModManager.IsDebugModeEnabled;
 
             if (textMessage.ToLowerInvariant() == ModManager.HostCommandToAllowModsWithRequestId().ToLowerInvariant() || 
                 textMessage.ToLowerInvariant() == ModManager.HostCommandToEnableDebugWithRequestId().ToLowerInvariant())
@@ -55,8 +55,8 @@
                     }
                     if (textMessage.ToLowerInvariant() == ModManager.HostCommandToEnableDebugWithRequestId().ToLowerInvariant())
                     {
-                        ModManager.EnableDebugMode = true;
-                        ModManager.ToggleModOption(true, nameof(ModManager.EnableDebugMode));
+                        ModManager.IsDebugModeEnabled = true;
+                        ModManager.ToggleModOption(true, nameof(ModManager.IsDebugModeEnabled));
                         StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use Debug Mode has been"));
                     }
 

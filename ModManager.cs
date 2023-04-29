@@ -109,7 +109,7 @@ namespace ModManager
                 
         public static bool RequestInfoShown { get; set; } = false;
         public static int RequestsSendToHost { get; set; } = 0;
-        public static bool EnableDebugMode { get; set; } = false;
+        public static bool IsDebugModeEnabled { get; set; } = false;
         public static bool AllowModsAndCheatsForMultiplayer { get; set; } = false;
 
         public bool HasConflicts { get; set; } = false;
@@ -499,7 +499,7 @@ namespace ModManager
             {
                 PermissionChanged = EventID.ModsAndCheatsNotEnabled;
             }
-            if (EnableDebugMode)
+            if (IsDebugModeEnabled)
             {
                 PermissionChanged = EventID.EnableDebugModeEnabled;
             }
@@ -507,11 +507,11 @@ namespace ModManager
             {
                 PermissionChanged = EventID.EnableDebugModeNotEnabled;
             }
-            if (IsModActiveForMultiplayer == false && EnableDebugMode == false)
+            if (IsModActiveForMultiplayer == false && IsDebugModeEnabled == false)
             {
                 PermissionChanged = EventID.NoneEnabled;
             }
-            if (IsModActiveForMultiplayer == true && EnableDebugMode == true)
+            if (IsModActiveForMultiplayer == true && IsDebugModeEnabled == true)
             {
                 PermissionChanged = EventID.AllEnabled;
             }
@@ -910,7 +910,7 @@ namespace ModManager
                 {
                     using (new GUILayout.VerticalScope(GUI.skin.label))
                     {
-                        GUILayout.Label($"To use {MultiplayerManager.MpManagerTitle}, first enable {nameof(LocalMultiplayerManager.IsMultiplayerGameModeActive)} ", LocalStylingManager.ColoredCommentLabel(Color.yellow));
+                        GUILayout.Label($"To use {MultiplayerManager.MpManagerTitle}, first switch to multiplayer. ", LocalStylingManager.ColoredCommentLabel(Color.yellow));
                     }
                 }
             }
@@ -1073,8 +1073,8 @@ namespace ModManager
                 }
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(EnableDebugMode)}:", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(EnableDebugMode, Color.green, LocalStylingManager.DefaultColor));
+                    GUILayout.Label($"{nameof(IsDebugModeEnabled)}:", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(IsDebugModeEnabled ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsDebugModeEnabled, Color.green, LocalStylingManager.DefaultColor));
                 }
        
                 GUILayout.Label($"{nameof(Cheats)}", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
@@ -1160,8 +1160,8 @@ namespace ModManager
                 }
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(EnableDebugMode)}:", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(EnableDebugMode ? "enabled" : "disabled")}",LocalStylingManager.ColoredToggleFieldValueLabel(EnableDebugMode, Color.green, LocalStylingManager.DefaultColor));
+                    GUILayout.Label($"{nameof(IsDebugModeEnabled)}:", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(IsDebugModeEnabled ? "enabled" : "disabled")}",LocalStylingManager.ColoredToggleFieldValueLabel(IsDebugModeEnabled, Color.green, LocalStylingManager.DefaultColor));
                 }
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
@@ -1309,10 +1309,10 @@ namespace ModManager
 
         private void EnableDebugModeOption()
         {
-            bool _enableDebugMode = GreenHellGame.DEBUG;
-            GreenHellGame.DEBUG = GUILayout.Toggle(GreenHellGame.DEBUG, "Enable Debug Mode for multiplayer?", GUI.skin.toggle);
-            EnableDebugMode = GreenHellGame.DEBUG;
-            ToggleModOption(_enableDebugMode, nameof(GreenHellGame.DEBUG));
+            bool _isDebugModeEnabled = GreenHellGame.DEBUG;
+            GreenHellGame.DEBUG = GUILayout.Toggle(GreenHellGame.DEBUG, "Enable debug mode for multiplayer?", GUI.skin.toggle);
+            IsDebugModeEnabled = GreenHellGame.DEBUG;
+            ToggleModOption(_isDebugModeEnabled, nameof(IsDebugModeEnabled));
         }
 
         private void RequestInfoShownOption()
@@ -1333,9 +1333,9 @@ namespace ModManager
 
         public static void ToggleModOption(bool optionState, string optionName)
         {
-            if (optionName == nameof(GreenHellGame.DEBUG) && optionState != GreenHellGame.DEBUG)
+            if (optionName == nameof(IsDebugModeEnabled) && optionState != IsDebugModeEnabled)
             {
-                if (GreenHellGame.DEBUG)
+                if (IsDebugModeEnabled)
                 {
                     GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
                     MainLevel.Instance.m_GameMode = GameMode.Debug;
@@ -1343,9 +1343,9 @@ namespace ModManager
                 else
                 {
                     GreenHellGame.Instance.m_GHGameMode = LocalMultiplayerManager.GameModeAtStart;
-                    MainLevel.Instance.m_GameMode = LocalMultiplayerManager.GameModeAtStart;
+                    MainLevel.Instance.m_GameMode = LocalMultiplayerManager.MainLevelGameModeAtStart;
                 }
-                onOptionToggled?.Invoke(GreenHellGame.DEBUG, $"Debug Mode has been");               
+                onOptionToggled?.Invoke(IsDebugModeEnabled, $"Debug Mode has been");               
             }
 
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
@@ -1396,7 +1396,7 @@ namespace ModManager
             ShowHUDBigInfo(HUDBigInfoMessage($"Saving..", MessageType.Info, Color.green));
             P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
             LocalMultiplayerManager.SaveGameOnSwitch();
-            LocalMultiplayerManager.SwitchGameMode(EnableDebugMode);
+            LocalMultiplayerManager.SwitchGameMode(IsDebugModeEnabled);
             EnableCursor(false);
         }
 
