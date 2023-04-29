@@ -10,13 +10,13 @@
         private void InitModManager(bool optionValue)
         {
             ModManager.RequestInfoShown = optionValue;
-            ModManager.ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
+            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));
 
             ModManager.AllowModsAndCheatsForMultiplayer = optionValue;
-            ModManager.ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
 
             ModManager.EnableDebugMode = optionValue;
-            ModManager.ToggleModOption(optionValue, nameof(ModManager.EnableDebugMode));
+            ModManager.Get().ToggleModOption(optionValue, nameof(ModManager.EnableDebugMode));
         }
 
         protected override void Awake()
@@ -49,13 +49,13 @@
                     if(textMessage.ToLowerInvariant() == ModManager.HostCommandToAllowModsWithRequestId().ToLowerInvariant())
                     {
                         ModManager.AllowModsAndCheatsForMultiplayer = true;
-                        ModManager.ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
+                        ModManager.Get().ToggleModOption(true, nameof(ModManager.AllowModsAndCheatsForMultiplayer));
                         StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use mods and cheats has been"));
                     }
                     if (textMessage.ToLowerInvariant() == ModManager.HostCommandToEnableDebugWithRequestId().ToLowerInvariant())
                     {
                         ModManager.EnableDebugMode = true;
-                        ModManager.ToggleModOption(true, nameof(ModManager.EnableDebugMode));
+                        ModManager.Get().ToggleModOption(true, nameof(ModManager.EnableDebugMode));
                         StoreMessage(ModManager.FlagStateChangedMessage(true, $"Permission to use Debug Mode has been"));
                     }
 

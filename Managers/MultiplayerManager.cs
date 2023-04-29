@@ -27,13 +27,22 @@ namespace ModManager.Managers
             => IsHostManager && ReplTools.IsCoopEnabled();
         public bool IsHostWithPlayersInCoop
             => IsHostInCoop && !ReplTools.IsPlayingAlone();
-        
-        public bool IsMultiplayerGameModeActive { get; set; } = false;
 
+        public string LocalHostDisplayName
+            =>  P2PSession.Instance.GetSessionMaster().GetDisplayName();
+        public string LocalClientPlayerName
+            => ReplTools.GetLocalPeer().GetDisplayName();
+        public bool IsMultiplayerGameModeActive { get; set; } = false;
+        public int PlayerCount => P2PSession.Instance.GetRemotePeerCount();
+        public string[] PlayerNames { get; set; } = default;
+        public int SelectedPlayerNameIndex { get; set; } = 0;
+        public string SelectedPlayerName { get; set; } = string.Empty;
+        
         public SessionJoinHelper SessionJoinHelperAtStart { get; set; } = default;
         public bool CanJoinSessionAtStart { get; set; } = true;
         public List<P2PPeer> CoopPlayerList { get; set; } = default;
         public List<P2PLobbyMemberInfo> CoopLobbyMembers { get; set; } = default;
+        
         public GameMode GameModeAtStart { get; set; } = GameMode.None;
         public P2PGameVisibility GameVisibilityAtSessionStart { get; set; } = P2PGameVisibility.Private;
         public P2PGameVisibility GameVisibilityAtStart { get; set; } = P2PGameVisibility.Private;
@@ -78,8 +87,14 @@ namespace ModManager.Managers
 
         protected virtual void InitData()
         {
-            CoopPlayerList = P2PSession.Instance.m_RemotePeers?.ToList();
             InitGameInfo();
+            InitMultiplayerInfo();
+        }
+
+        private void InitMultiplayerInfo()
+        {
+            CoopPlayerList = P2PSession.Instance.m_RemotePeers?.ToList();
+            PlayerNames = GetPlayerNames();
         }
 
         protected virtual void InitGameInfo()
@@ -87,9 +102,9 @@ namespace ModManager.Managers
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
             GameVisibilityAtSessionStart = P2PSession.Instance.GetGameVisibility();
             GameVisibilityAtStart = GreenHellGame.Instance.m_Settings.m_GameVisibility;
-            IsMultiplayerGameModeActive = (GameVisibilityAtSessionStart == P2PGameVisibility.Singleplayer || GameVisibilityAtStart == P2PGameVisibility.Singleplayer) ? false : true;
+            IsMultiplayerGameModeActive = GameVisibilityAtSessionStart != P2PGameVisibility.Singleplayer && GameVisibilityAtStart != P2PGameVisibility.Singleplayer;
             SessionJoinHelperAtStart = GreenHellGame.Instance.m_SessionJoinHelper;
-            CanJoinSessionAtStart = MainLevel.Instance.m_CanJoinSession;
+            CanJoinSessionAtStart = MainLevel.Instance.m_CanJoinSession;           
         }
 
         public P2PLobbyMemberInfo GetPlayerLobbyMemberInfo(P2PPeer peerPlayerToKick)
@@ -99,12 +114,12 @@ namespace ModManager.Managers
 
         public string[] GetPlayerNames()
         {
-            string LocalPeerDisplayName = P2PSession.Instance.LocalPeer.GetDisplayName();
+            string localPeerDisplayName = P2PSession.Instance.LocalPeer.GetDisplayName();
             string[] playerNames = default;
             if (IsHostWithPlayersInCoop && CoopPlayerList != null)
             {
                 playerNames = new string[CoopPlayerList.Count + 1];
-                playerNames[0] = LocalPeerDisplayName;
+                playerNames[0] = localPeerDisplayName;
                 int playerIdx = 1;
                 foreach (var peer in CoopPlayerList)
                 {
@@ -116,7 +131,7 @@ namespace ModManager.Managers
             if (IsHostManager)
             {
                 playerNames = new string[1];
-                playerNames[0] = LocalPeerDisplayName;
+                playerNames[0] = localPeerDisplayName;
                 return playerNames;
             }
             return playerNames;
@@ -175,5 +190,9 @@ namespace ModManager.Managers
             }
         }
 
+        public P2PPeer GetSelectedPeer(string selectedPlayerName)
+        {
+            return CoopPlayerList?.Find(peer => peer.GetDisplayName().ToLowerInvariant() == selectedPlayerName.ToLowerInvariant());
+        }
     }
 }

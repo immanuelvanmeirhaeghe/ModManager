@@ -20,22 +20,30 @@ namespace ModManager.Managers
         private static readonly string RuntimeConfiguration = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), $"{nameof(RuntimeConfiguration)}.xml");
 
         public bool IsModEnabled { get; set; } = true;
-        public Vector2 ModListScrollViewPosition { get; set; } = default;
+        
         public int SelectedModIDIndex { get; set; } = 0;
         public string SelectedModID { get; set; } = string.Empty;
         public IConfigurableMod SelectedMod { get; set; } = default;
-        public List<IConfigurableMod> ConfigurableModList { get; set; } = default;
-        public string[] ModListNames { get; set; } = default;
+
+        public List<IConfigurableMod> ModList { get; set; } = default;
+        public string[] ModNamesList { get; set; } = default;
         /// <summary>
         /// Key: (<see cref="IConfigurableMod.ID"/>, <see cref="IConfigurableModButton.ID"/>)
         /// Value: <see cref="IConfigurableModButton.KeyBinding"/>
         /// </summary>
-        public Dictionary<(string, string), string> ModConflictList  = new Dictionary<(string, string), string>();
+        public Dictionary<(string, string), string> ModListConflicts { get; set; } = default;
+        /// <summary>
+        /// Key: <see cref="IConfigurableMod.ID"/>
+        /// Value: <see cref="Type"/> of mod
+        /// </summary>
+        public Dictionary<string, Type> ModListLookUp { get; set; } = default;
 
         public ModdingManager()
         {
             useGUILayout = true;
-            ConfigurableModList = new List<IConfigurableMod>();
+            ModList = new List<IConfigurableMod>();
+            ModListConflicts = new Dictionary<(string, string), string>();
+            ModListLookUp  = new Dictionary<string, Type>();
             Instance = this;
         }
 
@@ -53,7 +61,7 @@ namespace ModManager.Managers
             Instance = this;
         }
 
-        private void OnDestroy()
+        protected virtual void OnDestroy()
         {
             Instance = null;
         }
@@ -73,8 +81,8 @@ namespace ModManager.Managers
 
         protected virtual void InitData()
         {
-            ConfigurableModList = GetModList();
-            ModListNames = GetModListNames();
+            ModList = GetModList();
+            ModNamesList = GetModNamesList(false);
         }
 
         public List<IConfigurableMod> GetModList()
@@ -127,36 +135,45 @@ namespace ModManager.Managers
             }
         }
 
-        public string[] GetModListNames(bool refresh = false)
+        public string[] GetModNamesList(bool refresh = false)
         {
-            if (ModListNames == null || ConfigurableModList == null || refresh)
+            string[] modListNames = default;
+            try
             {
-                ConfigurableModList = ConfigurableModList ?? new List<IConfigurableMod>();
-                ModListNames = new string[ConfigurableModList.Count];
-                int modIDIdx = 0;
-                foreach (var configurableMod in ConfigurableModList)
+                if (refresh)
                 {
-                    ModListNames[modIDIdx] = configurableMod.ID;
+                    ModList = GetModList();
+                    modListNames = new string[ModList.Count];
+                }
+               
+                int modIDIdx = 0;
+                foreach (var configurableMod in ModList)
+                {
+                    modListNames[modIDIdx] = configurableMod.ID;
                     modIDIdx++;
                 }
+                return modListNames;
             }
-            return ModListNames;
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(GetModList));                
+                return modListNames;
+            }
         }
 
         public IConfigurableMod GetSelectedMod(string modID)
-        {
-            SelectedMod = ConfigurableModList.Find(cfgMod => cfgMod.ID == modID);
-            return SelectedMod;
+        {            
+            return ModList.Find(cfgMod => cfgMod.ID == modID);            
         }
 
         public bool HasConflicts()
         {
-            ModConflictList.Clear();
+            ModListConflicts.Clear();
 
             var allbindings = new Dictionary<(string, string), string>();
-            if (ConfigurableModList != null)
+            if (ModList != null)
             {            
-                foreach (var mod in ConfigurableModList)
+                foreach (var mod in ModList)
                 {
                     for (int i = 0; i < mod.ConfigurableModButtons.Count; i++)
                     {
@@ -164,13 +181,18 @@ namespace ModManager.Managers
                         if (allbindings.Values.Contains(btn.KeyBinding))
                         {
                             allbindings.Add((mod.ID, btn.ID), btn.KeyBinding);
-                            ModConflictList.Add((mod.ID, btn.ID), btn.KeyBinding);                           
+                            ModListConflicts.Add((mod.ID, btn.ID), btn.KeyBinding);                           
                         }
                     }                   
                 }
             }
-            return ModConflictList.Count > 0;
-        } 
+            return ModListConflicts.Count > 0;
+        }
 
+        public KeyCode GetShortcutKey(string modID, string buttonID)
+        {
+            return (KeyCode)(ModList?.Find(cfgMod => cfgMod.ID == modID)?.ConfigurableModButtons?.Find(cfgButton => cfgButton.ID == buttonID)?.ShortcutKey);
+        }
     }
+
 }
