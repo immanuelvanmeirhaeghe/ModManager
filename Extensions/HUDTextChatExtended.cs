@@ -35,7 +35,7 @@ namespace ModManager.Extensions
                 if (fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseMods().ToLower().Trim() ||
                     fieldTextMessage.ToLower().Trim() == ModManager.GetClientCommandToUseDebugMode().ToLower().Trim())
                 {
-                    if (flag1 && flag2)
+                    if (flag1 || flag2)
                     {
                         ModManager.SetNewChatRequestId();
                     }

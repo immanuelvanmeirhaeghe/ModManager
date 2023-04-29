@@ -4,10 +4,11 @@
     {
         protected override void Start()
         {
-            base.Start();         
+            base.Start();
+            InitModManager(false);
         }
 
-        private void InitModManager(bool optionValue)
+        protected virtual void InitModManager(bool optionValue)
         {
             ModManager.RequestInfoShown = optionValue;
             ModManager.ToggleModOption(optionValue, nameof(ModManager.RequestInfoShown));

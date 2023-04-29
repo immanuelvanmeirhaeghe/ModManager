@@ -81,7 +81,10 @@ namespace ModManager
         public string LocalHostDisplayName { get; set; } = string.Empty;
         public string TextChatMessage { get; set; } = string.Empty;
         public string SteamAppId => GreenHellGame.s_SteamAppId.m_AppId.ToString();
-     
+        public static string GetClientPlayerName()
+        {
+            return MultiplayerManager.Get().LocalClientPlayerName;
+        }
         public Vector2 PlayerListScrollViewPosition { get; set; } = default;
 
         public int SelectedPlayerNameIndex { get; set; } = 0;
@@ -94,7 +97,7 @@ namespace ModManager
 
         public Vector2 ModListScrollViewPosition { get; set; } = default;
         public Vector2 GameInfoScrollViewPosition { get; set; } = default;
-        public Vector2 ModInfoScrollViewPosition { get; set; } = default;
+        public Vector2 ModManagerInfoScrollViewPosition { get; set; } = default;
         public Vector2 MpInfoScrollViewPosition { get; set; } = default;
 
         public bool IsModActiveForMultiplayer { get;  private set; }
@@ -375,7 +378,7 @@ namespace ModManager
             switch (controlId)
             {
                 case 0:
-                    ShowModManagerScreen = !ShowModManagerScreen;
+                    ShowModManagerScreen = !ShowModManagerScreen;                  
                     return;
                 case 1:
                     ShowModMpMngrScreen = !ShowModMpMngrScreen;
@@ -397,6 +400,10 @@ namespace ModManager
                     return;
                 case 7:
                     ShowClientMngr = !ShowClientMngr;
+                    return;
+                case 8:
+                    ShowModManagerScreen = !ShowModManagerScreen;
+                    ShowModMpMngrScreen = !ShowModMpMngrScreen;
                     return;
                 default:
                     ShowModManagerScreen = !ShowModManagerScreen;
@@ -738,7 +745,7 @@ namespace ModManager
                 }
                 if (ShowModInfo && SelectedMod != null)
                 {
-                  ModInfoBox();
+                  ModManagerInfoBox();
                 }
                 else
                 {
@@ -1158,19 +1165,21 @@ namespace ModManager
             }
         }
 
-        private void ModInfoBox()
+        private void ModManagerInfoBox()
         {
-            using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
+            using (new GUILayout.VerticalScope(GUI.skin.box))
             {
-                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
+                ModManagerInfoScrollViewPosition = GUILayout.BeginScrollView(ModManagerInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
 
+                GUILayout.Label("Mod Info", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
                 if (HasConflicts)
                 {
                     GUILayout.Label("Mod has conflicting key bound to it! You can set keybinding in ModAPI.", LocalStylingManager.ColoredCommentLabel(Color.red));
                 }
-
-                GUILayout.Label("Mod Info", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
-
+                else
+                {
+                    GUILayout.Label("There aren't any conflicts with keybindings.", LocalStylingManager.ColoredCommentLabel(Color.green));
+                }
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(IConfigurableMod.GameID)}:", LocalStylingManager.FormFieldNameLabel);
@@ -1384,7 +1393,8 @@ namespace ModManager
         {
             try
             {
-                CloseWindow(0);
+                ToggleShowUI(8);
+                
                 string description = $"Are you sure you want to switch to  {(LocalMultiplayerManager.IsMultiplayerGameModeActive == true ? "multiplayer?\nYour current game will first be saved, if possible.\n"  : "singleplayer?\nYour current game and of coop players' games will first be saved, if possible.\n")}\n";
                 YesNoDialog switchYesNoDialog = GreenHellGame.GetYesNoDialog();
                 switchYesNoDialog.Show(this, DialogWindowType.YesNo, $"{ModName} Info", description, true, false);
@@ -1406,8 +1416,7 @@ namespace ModManager
         public void OnNoFromDialog()
         {
             LocalMultiplayerManager.IsMultiplayerGameModeActive = !LocalMultiplayerManager.IsMultiplayerGameModeActive;
-            ToggleShowUI(0);
-            ToggleShowUI(1);
+            ToggleShowUI(8);
             EnableCursor(false);
         }
 
@@ -1419,11 +1428,6 @@ namespace ModManager
         public void OnCloseDialog()
         {
             EnableCursor(false);
-        }
-
-        public static string GetClientPlayerName()
-        {
-            return MultiplayerManager.Get().LocalClientPlayerName;
         }
 
     }
