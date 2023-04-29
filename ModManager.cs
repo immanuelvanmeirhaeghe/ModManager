@@ -1325,17 +1325,10 @@ namespace ModManager
         private void SwitchGameModeOption()
         {
             string NextGameMode = LocalMultiplayerManager.IsMultiplayerGameModeActive == true ? "Switch to singleplayer" : "Switch to multiplayer";
-            bool _isMultiplayerGameModeActive = LocalMultiplayerManager.IsMultiplayerGameModeActive;
-
             if (GUILayout.Button(NextGameMode, GUI.skin.button, GUILayout.Width(150f)))
             {
-                LocalMultiplayerManager.IsMultiplayerGameModeActive = !LocalMultiplayerManager.IsMultiplayerGameModeActive;
-            }
-                     
-            if (_isMultiplayerGameModeActive != LocalMultiplayerManager.IsMultiplayerGameModeActive)
-            {   
                 ShowConfirmSwitchGameModeDialog();
-            }          
+            }
         }
 
         public static void ToggleModOption(bool optionState, string optionName)
@@ -1384,8 +1377,10 @@ namespace ModManager
         {
             try
             {
+                CloseWindow(0);
                 EnableCursor(true);
-                string description = $"Are you sure you want to switch to  {(LocalMultiplayerManager.IsMultiplayerGameModeActive == true ? "multiplayer?\nYour current game will first be saved, if possible.\n"  : "singleplayer?\nYour current game and of coop players' games will first be saved, if possible.\n")}\n";
+                string NextGameMode = LocalMultiplayerManager.IsMultiplayerGameModeActive == true ? "switch to singleplayer? \\n Your current game and of coop players' games will first be saved, if possible.\n" : "switch to multiplayer?  \nYour current game will first be saved, if possible.\n";
+                string description = $"Are you sure you want to {NextGameMode}\n";
                 YesNoDialog switchYesNoDialog = GreenHellGame.GetYesNoDialog();
                 switchYesNoDialog.Show(this, DialogWindowType.YesNo, $"{ModName} Info", description, true, false);
                 switchYesNoDialog.gameObject.SetActive(true);

@@ -163,6 +163,9 @@ namespace ModManager.Managers
         {
             try
             {
+                bool _isMultiplayerGameModeActive = IsMultiplayerGameModeActive;
+                IsMultiplayerGameModeActive = !IsMultiplayerGameModeActive;
+
                 if (IsMultiplayerGameModeActive && ReplTools.IsCoopEnabled())
                 {
                     if (debug)
