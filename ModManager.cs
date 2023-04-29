@@ -49,8 +49,8 @@ namespace ModManager
         private static float ModMpMngrScreenMaxHeight { get; set; } = Screen.height;
         private static float ModMpMngrScreenStartPositionX { get; set; } = Screen.width / 2.5f;
         private static float ModMpMngrScreenStartPositionY { get; set; } = Screen.height / 2.5f;
-        private static bool IsModMpMngrScreenMinimized { get; set; }
-        private static int ModMpMngrScreenId { get; set; }
+        private static bool IsModMpMngrScreenMinimized { get; set; } = false;
+        private static int ModMpMngrScreenId { get; set; } = 0;
 
         private static CursorManager LocalCursorManager;
         private static HUDManager LocalHUDManager;
@@ -69,8 +69,7 @@ namespace ModManager
 
         public static Rect ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenTotalHeight);
         public static Rect ModMultiplayerManagerScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
-        public static Rect ModManagerMenuLogScreen = new Rect(0f, 0f, 300, 150f);
-
+       
         public KeyCode ShortcutKey { get; set; } = KeyCode.Alpha0;
 
         public static int ChatRequestId { get; set; } = 0;
@@ -114,8 +113,7 @@ namespace ModManager
 
         public bool HasConflicts { get; set; } = false;
         public bool ShowClientMngr { get; set; } = false;
-        public bool ShowMenuLogScreen { get; set; } = false;
-
+      
         public static string OnlyForSinglePlayerOrHostMessage() 
             => $"Only available for single player or when host. Host {LocalMultiplayerManager.LocalHostDisplayName} can activate using {ModName}.";
 
@@ -238,30 +236,6 @@ namespace ModManager
             Localization localization = GreenHellGame.Instance.GetLocalization();
             var messages = (HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages));
             messages.AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
-        }
-
-        public void ShowMenuLogWindow()
-        {
-            try
-            {   
-                ModManagerMenuLogScreen = GUILayout.Window(
-                    ModManagerMenuLogScreen.GetHashCode(),
-                    ModManagerMenuLogScreen,
-                    InitMenuLogScreen,
-                    nameof(ModManagerMenuLogScreen), 
-                    GUI.skin.window,
-                    GUILayout.ExpandWidth(true),
-                    GUILayout.MinWidth(ModManagerScreenMinWidth),
-                    GUILayout.MaxWidth(ModManagerScreenMaxWidth),
-                    GUILayout.ExpandHeight(true),
-                    GUILayout.MinHeight(ModManagerScreenMinHeight),
-                    GUILayout.MaxHeight(ModManagerScreenMaxHeight));
-
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(ShowMenuLogWindow));
-            }
         }
 
         private void InitMenuLogScreen(int windowId)
@@ -406,13 +380,7 @@ namespace ModManager
                     return;
                 case 6:
                     ShowModListInfo = !ShowModListInfo;
-                    return;
-                case 7:
-                    ShowClientMngr = !ShowClientMngr;
-                    return;
-                case 8:
-                    ShowMenuLogScreen = !ShowMenuLogScreen;
-                    return;
+                    return;            
                 default:
                     ShowModManagerScreen = !ShowModManagerScreen;
                     ShowModMpMngrScreen = !ShowModMpMngrScreen;
@@ -420,9 +388,7 @@ namespace ModManager
                     ShowMultiplayerManagerInfo = !ShowMultiplayerManagerInfo;
                     ShowModManagerInfo = !ShowModManagerInfo;
                     ShowMoreInfo = !ShowMoreInfo;
-                    ShowModListInfo = !ShowModListInfo;
-                    ShowClientMngr = !ShowClientMngr;
-                    ShowMenuLogScreen = !ShowMenuLogScreen;
+                    ShowModListInfo = !ShowModListInfo;                   
                     return;
             }         
         }
@@ -440,13 +406,7 @@ namespace ModManager
                 InitData();
                 InitSkinUI();
                 ShowModMpMngrWindow();
-            }
-            if (ShowMenuLogScreen)
-            {
-                InitData();
-                InitSkinUI();
-                ShowMenuLogWindow();
-            }
+            }         
         }
 
         private void ShowModManagerWindow()
@@ -983,16 +943,12 @@ namespace ModManager
             {
                 GameInfoScrollViewPosition = GUILayout.BeginScrollView(GameInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(250f));
 
-                GUILayout.Label($"{nameof(GreenHellGame)}", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
+                GUILayout.Label($"{ModName} settings", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
+
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(PermissionChanged)}: ", LocalStylingManager.FormFieldNameLabel);
                     GUILayout.Label($"{PermissionChanged}", LocalStylingManager.FormFieldValueLabel);
-                }
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(SteamAppId)}: ", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{SteamAppId}", LocalStylingManager.FormFieldValueLabel);
                 }
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
@@ -1011,6 +967,45 @@ namespace ModManager
                 }
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
+                    GUILayout.Label($"{nameof(LocalMultiplayerManager.MainLevelGameModeAtStart)}:", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{LocalMultiplayerManager.MainLevelGameModeAtStart}", LocalStylingManager.FormFieldValueLabel);
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    string NextGameMode = LocalMultiplayerManager.IsMultiplayerGameModeActive ? "Switch to singleplayer" : "Switch to multiplayer";
+                    GUILayout.Label($"{nameof(NextGameMode)}: ", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label(NextGameMode, LocalStylingManager.FormFieldValueLabel);
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(LocalMultiplayerManager.IsMultiplayerGameModeActive)}: ", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(LocalMultiplayerManager.IsMultiplayerGameModeActive ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(LocalMultiplayerManager.IsMultiplayerGameModeActive, Color.green, LocalStylingManager.DefaultColor));
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: ", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(IsModActiveForSingleplayer ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsModActiveForSingleplayer, Color.green, LocalStylingManager.DefaultColor));
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(IsModActiveForMultiplayer ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsModActiveForMultiplayer, Color.green, LocalStylingManager.DefaultColor));
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(AllowModsAndCheatsForMultiplayer, Color.green, LocalStylingManager.DefaultColor));
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(IsDebugModeEnabled)}:", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(IsDebugModeEnabled ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsDebugModeEnabled, Color.green, LocalStylingManager.DefaultColor));
+                }
+
+                GUILayout.Label($"{nameof(GreenHellGame)}", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
+
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
                     GUILayout.Label($"{nameof(GameMode)}:", LocalStylingManager.FormFieldNameLabel);
                     GUILayout.Label($"{GreenHellGame.Instance.m_GHGameMode}", LocalStylingManager.FormFieldValueLabel);
                 }
@@ -1018,6 +1013,11 @@ namespace ModManager
                 {
                     GUILayout.Label($"{nameof(P2PGameVisibility)}:", LocalStylingManager.FormFieldNameLabel);
                     GUILayout.Label($"{GreenHellGame.Instance.m_Settings.m_GameVisibility}", LocalStylingManager.FormFieldValueLabel);
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(GreenHellGame.DEBUG)} mode: ", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(GreenHellGame.DEBUG ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(GreenHellGame.DEBUG, Color.green, LocalStylingManager.DefaultColor));
                 }
 
                 GUILayout.Label($"{nameof(MainLevel)}", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
@@ -1037,45 +1037,6 @@ namespace ModManager
                     GUILayout.Label($"{nameof(MainLevel)}.{nameof(MainLevel.Instance)}.{nameof(MainLevel.Instance.m_Tutorial)}:", LocalStylingManager.FormFieldNameLabel);
                     GUILayout.Label($"{(MainLevel.Instance.m_Tutorial ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(MainLevel.Instance.m_Tutorial, Color.green, LocalStylingManager.DefaultColor));
                 }
-
-                GUILayout.Label(ModName, LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
-
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    string NextGameMode = LocalMultiplayerManager.IsMultiplayerGameModeActive ? "Switch to singleplayer" : "Switch to multiplayer";
-                    GUILayout.Label($"{nameof(NextGameMode)}: ", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label(NextGameMode, LocalStylingManager.FormFieldValueLabel);
-                }
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(LocalMultiplayerManager.IsMultiplayerGameModeActive)}: ", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(LocalMultiplayerManager.IsMultiplayerGameModeActive ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(LocalMultiplayerManager.IsMultiplayerGameModeActive, Color.green, LocalStylingManager.DefaultColor));
-                }
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(IsModActiveForSingleplayer)}: ", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(IsModActiveForSingleplayer ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsModActiveForSingleplayer, Color.green, LocalStylingManager.DefaultColor));
-                }               
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(IsModActiveForMultiplayer ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsModActiveForMultiplayer, Color.green, LocalStylingManager.DefaultColor));
-                }                
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(AllowModsAndCheatsForMultiplayer)}:", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(AllowModsAndCheatsForMultiplayer ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(AllowModsAndCheatsForMultiplayer, Color.green, LocalStylingManager.DefaultColor));
-                }
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(GreenHellGame.DEBUG)} Mode: ", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(GreenHellGame.DEBUG ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(GreenHellGame.DEBUG, Color.green, LocalStylingManager.DefaultColor));
-                }
-                using (new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label($"{nameof(IsDebugModeEnabled)}:", LocalStylingManager.FormFieldNameLabel);
-                    GUILayout.Label($"{(IsDebugModeEnabled ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(IsDebugModeEnabled, Color.green, LocalStylingManager.DefaultColor));
-                }
        
                 GUILayout.Label($"{nameof(Cheats)}", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
 
@@ -1088,8 +1049,7 @@ namespace ModManager
                 {
                     GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_OneShotConstructions)}:", LocalStylingManager.FormFieldNameLabel);
                     GUILayout.Label($"{(Cheats.m_OneShotConstructions ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(Cheats.m_OneShotConstructions, Color.green, LocalStylingManager.DefaultColor));
-                }
-               
+                }               
                 using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(Cheats)}.{nameof(Cheats.m_InstantBuild)}: ", LocalStylingManager.FormFieldNameLabel);
@@ -1300,19 +1260,16 @@ namespace ModManager
         }
 
         private void AllowModsAndCheatsOption()
-        {
-            bool _allowModsAndCheatsForMultiplayerValue = AllowModsAndCheatsForMultiplayer;
+        {        
             AllowModsAndCheatsForMultiplayer = GUILayout.Toggle(AllowModsAndCheatsForMultiplayer, "Allow mods and cheats for multiplayer?", GUI.skin.toggle);
             IsModActiveForMultiplayer = AllowModsAndCheatsForMultiplayer;
-            ToggleModOption(_allowModsAndCheatsForMultiplayerValue, nameof(AllowModsAndCheatsForMultiplayer));
+            ToggleModOption(AllowModsAndCheatsForMultiplayer, nameof(AllowModsAndCheatsForMultiplayer));
         }
 
         private void EnableDebugModeOption()
         {
-            bool _isDebugModeEnabled = GreenHellGame.DEBUG;
-            GreenHellGame.DEBUG = GUILayout.Toggle(GreenHellGame.DEBUG, "Enable debug mode for multiplayer?", GUI.skin.toggle);
-            IsDebugModeEnabled = GreenHellGame.DEBUG;
-            ToggleModOption(_isDebugModeEnabled, nameof(IsDebugModeEnabled));
+            IsDebugModeEnabled = GUILayout.Toggle(IsDebugModeEnabled, "Enable debug mode for multiplayer?", GUI.skin.toggle);          
+            ToggleModOption(IsDebugModeEnabled, nameof(IsDebugModeEnabled));
         }
 
         private void RequestInfoShownOption()
@@ -1333,32 +1290,32 @@ namespace ModManager
 
         public static void ToggleModOption(bool optionState, string optionName)
         {
-            if (optionName == nameof(IsDebugModeEnabled) && optionState != IsDebugModeEnabled)
-            {
-                if (IsDebugModeEnabled)
-                {
-                    GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
-                    MainLevel.Instance.m_GameMode = GameMode.Debug;
-                }
-                else
-                {
-                    GreenHellGame.Instance.m_GHGameMode = LocalMultiplayerManager.GameModeAtStart;
-                    MainLevel.Instance.m_GameMode = LocalMultiplayerManager.MainLevelGameModeAtStart;
-                }
-                onOptionToggled?.Invoke(IsDebugModeEnabled, $"Debug Mode has been");               
-            }
-
             if (optionName == nameof(AllowModsAndCheatsForMultiplayer) && optionState != AllowModsAndCheatsForMultiplayer)
             {
                 onOptionToggled?.Invoke(AllowModsAndCheatsForMultiplayer, $"Using mods and cheats has been");
                 onPermissionValueChanged?.Invoke(AllowModsAndCheatsForMultiplayer);
             }
-
             if (optionName == nameof(RequestInfoShown) && optionState != RequestInfoShown)
             {
                 onOptionToggled?.Invoke(RequestInfoShown, $"Chat request info was shown on how mods and cheats can be");
                 RequestsSendToHost = 0;
-            }           
+            }
+            if (optionName == nameof(IsDebugModeEnabled) && optionState != IsDebugModeEnabled)
+            {
+                if (IsDebugModeEnabled)
+                {
+                    GreenHellGame.DEBUG = true;
+                    GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
+                    MainLevel.Instance.m_GameMode = GameMode.Debug;
+                }
+                else
+                {
+                    GreenHellGame.DEBUG = false;
+                    GreenHellGame.Instance.m_GHGameMode = LocalMultiplayerManager.IsMultiplayerGameModeActive ? GameMode.Survival : GameMode.PVE;
+                    MainLevel.Instance.m_GameMode = LocalMultiplayerManager.IsMultiplayerGameModeActive ? GameMode.Survival : GameMode.PVE;
+                }
+                onOptionToggled?.Invoke(IsDebugModeEnabled, $"Debug mode has been");
+            }
         }
 
         private void HandleException(Exception exc, string methodName)

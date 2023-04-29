@@ -193,7 +193,7 @@ namespace ModManager.Managers
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(SwitchGameMode)+$"({debug})");
+                HandleException(exc, $"{nameof(SwitchGameMode)}({debug})");
             }
         }
 
