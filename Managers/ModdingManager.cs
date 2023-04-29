@@ -144,12 +144,16 @@ namespace ModManager.Managers
             try
             {
                 modList = GetModList();
-                foreach (var configurableMod in modList)
+                if (modList != null && modList.Count > 0)
                 {
-                    modListNames[modIDIdx] = configurableMod.ID;
-                    modIDIdx++;
+                    ModList = modList;
+                    modListNames = new string[modList.Count];
+                    foreach (var configurableMod in modList)
+                    {
+                        modListNames[modIDIdx] = configurableMod.ID;
+                        modIDIdx++;
+                    }
                 }
-             
                 return modListNames;
             }
             catch (Exception exc)
@@ -160,8 +164,17 @@ namespace ModManager.Managers
         }
 
         public IConfigurableMod GetSelectedMod(string modID)
-        {            
-            return ModList.Find(cfgMod => cfgMod.ID == modID);            
+        {
+            var modList = GetModList();
+            if (modList != null && modList.Count > 0)
+            {
+                ModList = modList;
+                return modList.Find(cfgMod => cfgMod.ID == modID);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public bool HasConflicts()
@@ -189,8 +202,18 @@ namespace ModManager.Managers
 
         public KeyCode GetShortcutKey(string modID, string buttonID)
         {
-            return (KeyCode)(ModList?.Find(cfgMod => cfgMod.ID == modID)?.ConfigurableModButtons?.Find(cfgButton => cfgButton.ID == buttonID)?.ShortcutKey);
+           var  modList = GetModList();
+            if (modList != null && modList.Count > 0)
+            {
+                ModList = modList;
+                return modList.Find(cfgMod => cfgMod.ID == modID).ConfigurableModButtons.Find(cfgButton => cfgButton.ID == buttonID).ShortcutKey;
+            }
+            else
+            {
+                return KeyCode.None;
+            }              
         }
+
     }
 
 }

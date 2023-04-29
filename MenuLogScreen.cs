@@ -11,6 +11,7 @@ namespace ModManager
 
     public class MenuLogScreen : MonoBehaviour, IInputsReceiver
     {
+        public new static GameObject gameObject;
         public IUIChangeableOption[] m_ChangeableOptions;
         protected static GameObject s_HighlightGO;
         protected static RectTransform s_HighlightRect;
@@ -100,6 +101,12 @@ namespace ModManager
             }
         }
 
+        public MenuLogScreen()
+        {
+            gameObject = GetComponent<MenuLogScreen>().transform.gameObject;
+            LogFile = string.Empty;
+            LogFiles = new string[1];
+        }
 
         public virtual bool CanReceiveAction()
         {
@@ -353,12 +360,10 @@ namespace ModManager
 
         public static float s_InactiveButtonsAlpha = 0.3f;
 
-        [HideInInspector]
         public bool m_IsIngame;
 
         private HUDManager.HUDGroup m_VisibleHUD;
 
-        [HideInInspector]
         public MenuInGameManager m_MenuInGameManager;
 
         public List<GameObject> m_PadEnableElements = new List<GameObject>();
@@ -408,12 +413,6 @@ namespace ModManager
 
         public string[] LogFiles;
         private MenuOptionData m_ActiveMenuOption;
-
-        public MenuLogScreen()
-        {
-            LogFile = string.Empty;
-            LogFiles = new string[1];
-        }
 
         public MenuLogScreen(string logFile)
             : this()
@@ -477,14 +476,14 @@ namespace ModManager
 
         public void Show()
         {
-            base.gameObject.SetActive(value: true);
+            gameObject.SetActive(value: true);
             OnShow();
             OnPostShow();         
         }
 
         public void Hide()
         {
-            base.gameObject.SetActive(value: false);
+            gameObject.SetActive(value: false);
             OnHide();      
         }
 
