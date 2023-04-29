@@ -31,7 +31,7 @@ namespace ModManager
         private static readonly string ModName = nameof(ModManager);
 
         private static float ModManagerScreenTotalWidth { get; set; } = 700f;
-        private static float ModManagerScreenTotalHeight { get; set; } = 600f;
+        private static float ModManagerScreenTotalHeight { get; set; } = 500f;
         private static float ModManagerScreenMinWidth { get; set; } = 700f;
         private static float ModManagerScreenMinHeight { get; set; } = 50f;
         private static float ModManagerScreenMaxWidth { get; set; } = Screen.width;
@@ -61,7 +61,7 @@ namespace ModManager
 
         private bool ShowModManagerScreen = false;
         private bool ShowGameInfo = false;
-        private bool ShowMpInfo = false;
+        private bool ShowMultiplayerManagerInfo = false;
         private bool ShowModMpMngrScreen = false;
         private bool ShowModManagerInfo = false;
         private bool ShowMoreInfo = false;
@@ -396,7 +396,7 @@ namespace ModManager
                     ShowGameInfo = !ShowGameInfo;
                     return; 
                 case 3:
-                    ShowMpInfo = !ShowMpInfo;
+                    ShowMultiplayerManagerInfo = !ShowMultiplayerManagerInfo;
                     return;
                 case 4:
                     ShowModManagerInfo = !ShowModManagerInfo;
@@ -417,7 +417,7 @@ namespace ModManager
                     ShowModManagerScreen = !ShowModManagerScreen;
                     ShowModMpMngrScreen = !ShowModMpMngrScreen;
                     ShowGameInfo = !ShowGameInfo;
-                    ShowMpInfo = !ShowMpInfo;
+                    ShowMultiplayerManagerInfo = !ShowMultiplayerManagerInfo;
                     ShowModManagerInfo = !ShowModManagerInfo;
                     ShowMoreInfo = !ShowMoreInfo;
                     ShowModListInfo = !ShowModListInfo;
@@ -564,22 +564,13 @@ namespace ModManager
                         ClientManagerBox();
                     }
 
-                    if (GUILayout.Button("Log Files", GUI.skin.button))
-                    {
-                        ToggleShowUI(8);
-                    }
-                    if (ShowMenuLogScreen)
-                    {
-                        ShowMenuLogWindow();
-                    }
-
                     if (GUILayout.Button("Mod List", GUI.skin.button))
                     {
                         ToggleShowUI(6);
                     }
                     if (ShowModListInfo)
                     {
-                        ModListBox();
+                        ModManagerModListBox();
                     }                   
                 }
 
@@ -603,12 +594,12 @@ namespace ModManager
                     {
                         ToggleShowUI(3);
                     }
-                    if (ShowMpInfo)
+                    if (ShowMultiplayerManagerInfo)
                     {
-                        MultiplayerInfoBox();
+                        MultiplayerManagerInfoBox();
                     }
 
-                    GUILayout.Label($"All players currently in game: ", GUI.skin.label);
+                    GUILayout.Label($"This is the list of all players currently in game.", LocalStylingManager.TextLabel);
                     PlayerListScrollViewBox();
 
                     SendTexMessagesBox();
@@ -633,7 +624,7 @@ namespace ModManager
                 }
                 if (GUILayout.Button("Close", GUI.skin.button))
                 {
-                    CloseWindow(1);
+                    ToggleShowUI(1);
                 }
             }
         }
@@ -748,11 +739,11 @@ namespace ModManager
             }
         }
 
-        private void ModListBox()
+        private void ModManagerModListBox()
         {          
             using (new GUILayout.VerticalScope(GUI.skin.box))
             {
-                ModListScrollViewBox();
+                ModManagerModListScrollViewBox();
 
                 if (GUILayout.Button("Mod Info", GUI.skin.button))
                 {
@@ -769,11 +760,13 @@ namespace ModManager
             }
         }
        
-        private void ModListScrollViewBox()
+        private void ModManagerModListScrollViewBox()
         {
             using (new GUILayout.VerticalScope(GUI.skin.box))
             {
                 GUILayout.Label($"ModAPI mod list", LocalStylingManager.ColoredSubHeaderLabel(Color.cyan));
+
+                GUILayout.Label($"This list is based on the ModAPI generated runtime configuration file: \n{RuntimeConfiguration}", LocalStylingManager.ColoredCommentLabel(Color.yellow));
 
                 ModListScrollView();
             }
@@ -915,7 +908,7 @@ namespace ModManager
                 }
                 else
                 {
-                    using (var infoScope = new GUILayout.VerticalScope(GUI.skin.label))
+                    using (new GUILayout.VerticalScope(GUI.skin.label))
                     {
                         GUILayout.Label($"To use {MultiplayerManager.MpManagerTitle}, first enable {nameof(LocalMultiplayerManager.IsMultiplayerGameModeActive)} ", LocalStylingManager.ColoredCommentLabel(Color.yellow));
                     }
@@ -1122,7 +1115,7 @@ namespace ModManager
             }
         }
 
-        private void MultiplayerInfoBox()
+        private void MultiplayerManagerInfoBox()
         {
             LocalHostDisplayName = LocalMultiplayerManager.LocalHostDisplayName;
             if (ChatRequestId == 0 || ChatRequestId == int.MinValue || ChatRequestId == int.MaxValue)
@@ -1174,8 +1167,12 @@ namespace ModManager
                 {
                     GUILayout.Label($"Host command to enable Debug Mode:", LocalStylingManager.FormFieldNameLabel);
                     GUILayout.Label($"{HostCommandToEnableDebugWithRequestId()}", LocalStylingManager.FormFieldValueLabel);
-                }               
-
+                }
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"{nameof(LocalMultiplayerManager.IsMultiplayerGameModeActive)}:", LocalStylingManager.FormFieldNameLabel);
+                    GUILayout.Label($"{(LocalMultiplayerManager.IsMultiplayerGameModeActive ? "enabled" : "disabled")}", LocalStylingManager.ColoredToggleFieldValueLabel(LocalMultiplayerManager.IsMultiplayerGameModeActive, Color.green, LocalStylingManager.DefaultColor));
+                }
                 GUILayout.EndScrollView();
             }
         }

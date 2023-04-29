@@ -182,7 +182,7 @@ namespace ModManager.Managers
                     }
                     else
                     {
-                        OnSurvival(false);
+                        OnPVEwithMaps();
                     }
                 }                
             }
