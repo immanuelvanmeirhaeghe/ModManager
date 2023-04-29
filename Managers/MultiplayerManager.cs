@@ -44,6 +44,7 @@ namespace ModManager.Managers
         public List<P2PLobbyMemberInfo> CoopLobbyMembers { get; set; } = default;
         
         public GameMode GameModeAtStart { get; set; } = GameMode.None;
+        public GameMode MainLevelGameModeAtStart { get; set; } = GameMode.None;
         public P2PGameVisibility GameVisibilityAtSessionStart { get; set; } = P2PGameVisibility.Private;
         public P2PGameVisibility GameVisibilityAtStart { get; set; } = P2PGameVisibility.Private;
 
@@ -100,9 +101,11 @@ namespace ModManager.Managers
         protected virtual void InitGameInfo()
         {
             GameModeAtStart = GreenHellGame.Instance.m_GHGameMode;
+            MainLevelGameModeAtStart = MainLevel.Instance.m_GameMode;
             GameVisibilityAtSessionStart = P2PSession.Instance.GetGameVisibility();
             GameVisibilityAtStart = GreenHellGame.Instance.m_Settings.m_GameVisibility;
-            IsMultiplayerGameModeActive = GameVisibilityAtSessionStart != P2PGameVisibility.Singleplayer && GameVisibilityAtStart != P2PGameVisibility.Singleplayer;
+            
+            IsMultiplayerGameModeActive = GameModeAtStart != GameMode.PVE && MainLevelGameModeAtStart != GameMode.PVE;
             SessionJoinHelperAtStart = GreenHellGame.Instance.m_SessionJoinHelper;
             CanJoinSessionAtStart = MainLevel.Instance.m_CanJoinSession;           
         }
@@ -162,8 +165,7 @@ namespace ModManager.Managers
         public void SwitchGameMode(bool debug)
         {
             try
-            {
-                bool _isMultiplayerGameModeActive = IsMultiplayerGameModeActive;
+            {              
                 IsMultiplayerGameModeActive = !IsMultiplayerGameModeActive;
 
                 if (IsMultiplayerGameModeActive && ReplTools.IsCoopEnabled())
