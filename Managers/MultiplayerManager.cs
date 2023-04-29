@@ -58,7 +58,7 @@ namespace ModManager.Managers
         private void HandleException(Exception exc, string methodName)
         {
             string info = $"[{ModuleName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
-            ModAPI.Log.Write(info);
+            Log.Write(info);
             Debug.Log(info);
         }      
 
@@ -159,30 +159,32 @@ namespace ModManager.Managers
             return true;
         }
 
-        public void SwitchGameMode()
+        public void SwitchGameMode(bool debug)
         {
             try
             {
-                GreenHellGame.Instance.m_Settings.m_GameVisibility = IsMultiplayerGameModeActive == true ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer;
-                GreenHellGame.Instance.m_SessionJoinHelper = SessionJoinHelperAtStart ?? new SessionJoinHelper();
-                GreenHellGame.FORCE_SURVIVAL = true;
-                MainLevel.Instance.m_CanJoinSession = CanJoinSessionAtStart;
-                MainLevel.Instance.m_Tutorial = false;
                 if (IsMultiplayerGameModeActive && ReplTools.IsCoopEnabled())
                 {
-                    GreenHellGame.Instance.m_GHGameMode = GameMode.PVE;
-                    MainLevel.Instance.m_GameMode = GameMode.PVE;
-                    P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Friends);
-                    P2PSession.Instance.Start();
+                    if (debug)
+                    {
+                        OnDebug(true);
+                    }
+                    else
+                    {
+                        OnSurvival(true);
+                    }
                 }
                 else
                 {
-                    GreenHellGame.Instance.m_GHGameMode = GameModeAtStart;
-                    MainLevel.Instance.m_GameMode =MultiplayerManager.Get().GameModeAtStart;
-                    P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Singleplayer);
-                    P2PSession.Instance.Start(null);
-                }
-                MainLevel.Instance.StartLevel();
+                    if (debug)
+                    {
+                        OnDebug(false);
+                    }
+                    else
+                    {
+                        OnSurvival(false);
+                    }
+                }                
             }
             catch (Exception exc)
             {
@@ -190,9 +192,248 @@ namespace ModManager.Managers
             }
         }
 
+        public void SaveGameOnSwitch()
+        {
+            try
+            {                
+                if (IsHostWithPlayersInCoop && ReplTools.CanSaveInCoop())
+                {                    
+                    SaveGame.SaveCoop();
+                }
+                if (!IsHostWithPlayersInCoop)
+                {
+                    SaveGame.Save();
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(SaveGameOnSwitch));
+            }
+        }
+
         public P2PPeer GetSelectedPeer(string selectedPlayerName)
         {
             return CoopPlayerList?.Find(peer => peer.GetDisplayName().ToLowerInvariant() == selectedPlayerName.ToLowerInvariant());
         }
+
+        public void OnStory()
+        {
+            P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Singleplayer);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Singleplayer;
+            MainLevel.Instance.m_GameMode = GameMode.Story;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Story;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+        }
+
+        public void OnStoryCoop()
+        {
+            MainLevel.Instance.m_GameMode = GameMode.Story;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Story;
+            MenuInGameManager.Get().HideMenu();
+            if (ReplTools.IsCoopEnabled())
+            {
+                P2PSession.Instance.Start(null);
+            }
+            P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Friends);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Friends;
+            MainLevel.Instance.Initialize();
+            StartRainforestAmbienceMultisample();
+        }
+
+        public void OnSurvival(bool mp)
+        {
+            P2PSession.Instance.SetGameVisibility(mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = (mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
+            ScenarioManager.Get().SetSkipTutorial(set: true);
+            MainLevel.Instance.m_GameMode = GameMode.Survival;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Survival;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+            if (mp)
+            {
+                P2PSession.Instance.Start();
+            }
+        }
+
+        public void OnPVE()
+        {
+            P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Friends);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Friends;
+            ScenarioManager.Get().SetSkipTutorial(set: true);
+            MainLevel.Instance.m_GameMode = GameMode.PVE;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.PVE;
+            GreenHellGame.Instance.m_LoadState = GreenHellGame.LoadState.GameLoading;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+        }
+              
+        public void OnPVEwithMaps()
+        {
+            P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Friends);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Friends;
+            ScenarioManager.Get().SetSkipTutorial(set: true);
+            MainLevel.Instance.m_GameMode = GameMode.PVE;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.PVE;
+            GreenHellGame.Instance.LoadScenesFromScript();
+            GreenHellGame.Instance.m_LoadState = GreenHellGame.LoadState.GameLoading;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+        }
+
+        public void OnTutorial()
+        {
+            P2PSession.Instance.SetGameVisibility(P2PGameVisibility.Singleplayer);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = P2PGameVisibility.Singleplayer;
+            MainLevel.Instance.m_GameMode = GameMode.Survival;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Survival;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+        }
+
+        public void OnDebug(bool mp)
+        {
+            P2PSession.Instance.SetGameVisibility(mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
+            GreenHellGame.Instance.m_Settings.m_GameVisibility = (mp ? P2PGameVisibility.Friends : P2PGameVisibility.Singleplayer);
+            Player.Get().UnlockMap();
+            Player.Get().UnlockNotepad();
+            Player.Get().UnlockWatch();
+            ItemsManager.Get().UnlockAllItemsInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllDiseasesInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllDiseasesTratmentInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllSymptomsInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllSymptomTreatmentsInNotepad();
+            PlayerInjuryModule.Get().UnlockAllInjuryState();
+            PlayerInjuryModule.Get().UnlockAllInjuryStateTreatment();
+            MapTab.Get().UnlockAll(achevements_events: false);
+            MainLevel.Instance.m_GameMode = GameMode.Debug;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Debug;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+            if (mp)
+            {
+                P2PSession.Instance.Start();
+            }
+        }
+
+        public void OnDebugPermaDeath()
+        {
+            Player.Get().UnlockMap();
+            Player.Get().UnlockNotepad();
+            Player.Get().UnlockWatch();
+            ItemsManager.Get().UnlockAllItemsInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllDiseasesInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllDiseasesTratmentInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllSymptomsInNotepad();
+            PlayerDiseasesModule.Get().UnlockAllSymptomTreatmentsInNotepad();
+            PlayerInjuryModule.Get().UnlockAllInjuryState();
+            PlayerInjuryModule.Get().UnlockAllInjuryStateTreatment();
+            MainLevel.Instance.m_GameMode = GameMode.Debug;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.None;
+            DifficultySettings.SetActivePresetType(DifficultySettings.PresetType.PermaDeath);
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+        }
+
+        public void OnResetChallenges()
+        {
+            ChallengesManager.Get().ResetChallenges();
+        }
+
+        public void OnFirecampChallenge()
+        {
+            OnChallenge("Firecamp");
+        }
+
+        public void OnFirecampHardChallenge()
+        {
+            OnChallenge("FirecampHard");
+        }
+
+        public void OnBoatChallenge()
+        {
+            OnChallenge("Boat");
+        }
+
+        public void OnCampChallenge()
+        {
+            OnChallenge("Camp");
+        }
+
+        public void OnTribeRadioChallenge()
+        {
+            OnChallenge("TribeRadio");
+        }
+
+        public void OnTribeRunawayChallenge()
+        {
+            OnChallenge("TribeRunaway");
+        }
+
+        public void OnHunterChallenge()
+        {
+            OnChallenge("Hunter");
+        }
+
+        public void OnChallenge(string name)
+        {
+            ChallengesManager.Get().m_ChallengeToActivate = name;
+            ScenarioManager.Get().SetSkipTutorial(set: true);
+            MainLevel.Instance.m_GameMode = GameMode.Survival;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Survival;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+            BalanceSystem20.Get().Initialize();
+        }
+
+        private void StartRainforestAmbienceMultisample()
+        {
+            AmbientAudioSystem.Instance.StartRainForestAmbienceMultisample();
+        }
+
+        public void OnDream(int i)
+        {
+            ScenarioManager.Get().SetSkipTutorial(set: true);
+            MainLevel.Instance.m_GameMode = GameMode.Story;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Story;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+            ScenarioManager.Get().SetBoolVariable("ShouldDream_0" + i + "_Start", val: true);
+        }
+
+        public void OnDream(string variable)
+        {
+            ScenarioManager.Get().SetSkipTutorial(set: true);
+            MainLevel.Instance.m_GameMode = GameMode.Story;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Story;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+            ScenarioManager.Get().SetBoolVariable(variable, val: true);
+        }
+
+        public void OnDebugFromEditorPos()
+        {
+        }
+
+        public void OnlyTutorial()
+        {
+            MainLevel.Instance.m_GameMode = GameMode.Story;
+            GreenHellGame.Instance.m_GHGameMode = GameMode.Story;
+            GreenHellGame.Instance.m_OnlyTutorial = true;
+            MainLevel.Instance.Initialize();
+            MenuInGameManager.Get().HideMenu();
+            StartRainforestAmbienceMultisample();
+        }
+
     }
 }

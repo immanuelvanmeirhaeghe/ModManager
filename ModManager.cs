@@ -63,12 +63,14 @@ namespace ModManager
         private bool ShowGameInfo = false;
         private bool ShowMpInfo = false;
         private bool ShowModMpMngrScreen = false;
-        private bool ShowModInfo = false;
-        private bool ShowInfo = false;
-        private bool ShowModList =false;
+        private bool ShowModManagerInfo = false;
+        private bool ShowMoreInfo = false;
+        private bool ShowModListInfo =false;
 
         public static Rect ModManagerScreen = new Rect(ModManagerScreenStartPositionX, ModManagerScreenStartPositionY, ModManagerScreenTotalWidth, ModManagerScreenTotalHeight);
-        public static Rect ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
+        public static Rect ModMultiplayerManagerScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
+        public static Rect ModManagerMenuLogScreen = new Rect(0f, 0f, 300, 150f);
+
         public KeyCode ShortcutKey { get; set; } = KeyCode.Alpha0;
 
         public static int ChatRequestId { get; set; } = 0;
@@ -112,6 +114,7 @@ namespace ModManager
 
         public bool HasConflicts { get; set; } = false;
         public bool ShowClientMngr { get; set; } = false;
+        public bool ShowMenuLogScreen { get; set; } = false;
 
         public static string OnlyForSinglePlayerOrHostMessage() 
             => $"Only available for single player or when host. Host {LocalMultiplayerManager.LocalHostDisplayName} can activate using {ModName}.";
@@ -237,16 +240,15 @@ namespace ModManager
             messages.AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(ItemInfo));
         }
 
-        public void ShowMenuLogScreen()
+        public void ShowMenuLogWindow()
         {
             try
-            {              
-                Rect MenuLogScreen = new Rect(0f, 0f, 85f, 150f);
-                MenuLogScreen = GUILayout.Window(
-                    MenuLogScreen.GetHashCode(),
-                    MenuLogScreen,
+            {   
+                ModManagerMenuLogScreen = GUILayout.Window(
+                    ModManagerMenuLogScreen.GetHashCode(),
+                    ModManagerMenuLogScreen,
                     InitMenuLogScreen,
-                    nameof(MenuLogScreen), 
+                    nameof(ModManagerMenuLogScreen), 
                     GUI.skin.window,
                     GUILayout.ExpandWidth(true),
                     GUILayout.MinWidth(ModManagerScreenMinWidth),
@@ -258,31 +260,38 @@ namespace ModManager
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(ShowMenuLogScreen));
+                HandleException(exc, nameof(ShowMenuLogWindow));
             }
         }
 
         private void InitMenuLogScreen(int windowId)
         {
-            string baseLogPath = Application.dataPath.Replace("GH_Data", "Logs");
-            string[] modNamesList = LocalModdingManager.ModNamesList;
-            string[] logFiles = new string[modNamesList.Length];
-            string text = string.Empty;
-            for (int i = 0; i < modNamesList.Length; i++)
+            try
             {
-                logFiles[i] = Path.Combine(baseLogPath, $"{modNamesList[i]}.log");
-                if (File.Exists(logFiles[i]))
+                string baseLogPath = Application.dataPath.Replace("GH_Data", "Logs");
+                string[] modNamesList = LocalModdingManager.ModNamesList;
+                string[] logFiles = new string[modNamesList.Length];
+                string text = string.Empty;
+                for (int i = 0; i < modNamesList.Length; i++)
                 {
-                    text += File.ReadAllText(logFiles[i]);
+                    logFiles[i] = Path.Combine(baseLogPath, $"{modNamesList[i]}.log");
+                    if (File.Exists(logFiles[i]))
+                    {
+                        text += File.ReadAllText(logFiles[i]);
+                    }
                 }
+                using (new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.backgroundColor = Color.black;
+                    GUILayout.TextArea(text, GUI.skin.textArea, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                }
+                GUI.backgroundColor = LocalStylingManager.DefaultBackGroundColor;
+                GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
             }
-
-            using (new GUILayout.VerticalScope(GUI.skin.box))
+            catch (Exception exc)
             {
-                GUI.backgroundColor = Color.black;
-                GUILayout.TextArea(text, GUI.skin.textArea, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true) );
+                HandleException(exc, nameof(InitMenuLogScreen));
             }
-            GUI.backgroundColor = LocalStylingManager.DefaultBackGroundColor;
         }
 
         private void EnableCursor(bool blockPlayer = false)
@@ -390,30 +399,30 @@ namespace ModManager
                     ShowMpInfo = !ShowMpInfo;
                     return;
                 case 4:
-                    ShowModInfo = !ShowModInfo;
+                    ShowModManagerInfo = !ShowModManagerInfo;
                     return;
                 case 5:
-                    ShowInfo = !ShowInfo;
+                    ShowMoreInfo = !ShowMoreInfo;
                     return;
                 case 6:
-                    ShowModList = !ShowModList;
+                    ShowModListInfo = !ShowModListInfo;
                     return;
                 case 7:
                     ShowClientMngr = !ShowClientMngr;
                     return;
                 case 8:
-                    ShowModManagerScreen = !ShowModManagerScreen;
-                    ShowModMpMngrScreen = !ShowModMpMngrScreen;
+                    ShowMenuLogScreen = !ShowMenuLogScreen;
                     return;
                 default:
                     ShowModManagerScreen = !ShowModManagerScreen;
                     ShowModMpMngrScreen = !ShowModMpMngrScreen;
                     ShowGameInfo = !ShowGameInfo;
                     ShowMpInfo = !ShowMpInfo;
-                    ShowModInfo = !ShowModInfo;
-                    ShowInfo = !ShowInfo;
-                    ShowModList = !ShowModList;
+                    ShowModManagerInfo = !ShowModManagerInfo;
+                    ShowMoreInfo = !ShowMoreInfo;
+                    ShowModListInfo = !ShowModListInfo;
                     ShowClientMngr = !ShowClientMngr;
+                    ShowMenuLogScreen = !ShowMenuLogScreen;
                     return;
             }         
         }
@@ -431,6 +440,12 @@ namespace ModManager
                 InitData();
                 InitSkinUI();
                 ShowModMpMngrWindow();
+            }
+            if (ShowMenuLogScreen)
+            {
+                InitData();
+                InitSkinUI();
+                ShowMenuLogWindow();
             }
         }
 
@@ -460,9 +475,9 @@ namespace ModManager
             {
                 ModMpMngrScreenId = GetHashCode() + 1;
             }
-            ModMpMngrScreen = GUILayout.Window(
+            ModMultiplayerManagerScreen = GUILayout.Window(
                    ModMpMngrScreenId,
-                   ModMpMngrScreen,
+                   ModMultiplayerManagerScreen,
                    InitModMpMngrWindow,
                    MultiplayerManager.MpManagerTitle,
                    GUI.skin.window,
@@ -542,27 +557,27 @@ namespace ModManager
                 {
                     if (LocalMultiplayerManager.IsHostManager)
                     {
-                        HostManagerBox();
-                        if (GUILayout.Button("Client Manager", GUI.skin.button))
-                        {
-                            ToggleShowUI(7);
-                        }
-                        if (ShowClientMngr)
-                        {
-                            ShowMenuLogScreen();
-                            ClientManagerBox();
-                        }
+                        HostManagerBox();                       
                     }
                     else
                     {
                         ClientManagerBox();
                     }
 
+                    if (GUILayout.Button("Log Files", GUI.skin.button))
+                    {
+                        ToggleShowUI(8);
+                    }
+                    if (ShowMenuLogScreen)
+                    {
+                        ShowMenuLogWindow();
+                    }
+
                     if (GUILayout.Button("Mod List", GUI.skin.button))
                     {
                         ToggleShowUI(6);
                     }
-                    if (ShowModList)
+                    if (ShowModListInfo)
                     {
                         ModListBox();
                     }                   
@@ -574,9 +589,9 @@ namespace ModManager
 
         private void InitModMpMngrWindow(int windowID)
         {
-            ModMpMngrScreenStartPositionX = ModMpMngrScreen.x;
-            ModMpMngrScreenStartPositionY = ModMpMngrScreen.y;
-            ModMpMngrScreenTotalWidth = ModMpMngrScreen.width;
+            ModMpMngrScreenStartPositionX = ModMultiplayerManagerScreen.x;
+            ModMpMngrScreenStartPositionY = ModMultiplayerManagerScreen.y;
+            ModMpMngrScreenTotalWidth = ModMultiplayerManagerScreen.width;
 
             using (new GUILayout.VerticalScope(GUI.skin.box))
             {
@@ -743,7 +758,7 @@ namespace ModManager
                 {
                     ToggleShowUI(4);
                 }
-                if (ShowModInfo && SelectedMod != null)
+                if (ShowModManagerInfo && SelectedMod != null)
                 {
                   ModManagerInfoBox();
                 }
@@ -1239,11 +1254,11 @@ namespace ModManager
         {
             string collapseButtonText = IsModMpMngrScreenMinimized ? "O" : "-";
 
-            if (GUI.Button(new Rect(ModMpMngrScreen.width - 40f, 0f, 20f, 20f), collapseButtonText, GUI.skin.button))
+            if (GUI.Button(new Rect(ModMultiplayerManagerScreen.width - 40f, 0f, 20f, 20f), collapseButtonText, GUI.skin.button))
             {
                 CollapseMpWindow();
             }
-            if (GUI.Button(new Rect(ModMpMngrScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
+            if (GUI.Button(new Rect(ModMultiplayerManagerScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
             {
                 CloseWindow(1);
             }
@@ -1270,18 +1285,18 @@ namespace ModManager
 
         private void CollapseMpWindow()
         {
-            ModMpMngrScreenStartPositionX = ModMpMngrScreen.x;
-            ModMpMngrScreenStartPositionY = ModMpMngrScreen.y;
-            ModMpMngrScreenTotalWidth = ModMpMngrScreen.width;
+            ModMpMngrScreenStartPositionX = ModMultiplayerManagerScreen.x;
+            ModMpMngrScreenStartPositionY = ModMultiplayerManagerScreen.y;
+            ModMpMngrScreenTotalWidth = ModMultiplayerManagerScreen.width;
 
             if (!IsModMpMngrScreenMinimized)
             {
-                ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenMinHeight);
+                ModMultiplayerManagerScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenMinHeight);
                 IsModMpMngrScreenMinimized = true;
             }
             else
             {
-                ModMpMngrScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
+                ModMultiplayerManagerScreen = new Rect(ModMpMngrScreenStartPositionX, ModMpMngrScreenStartPositionY, ModMpMngrScreenTotalWidth, ModMpMngrScreenTotalHeight);
                 IsModMpMngrScreenMinimized = false;
             }
             ShowModMpMngrWindow();
@@ -1356,27 +1371,6 @@ namespace ModManager
             }           
         }
 
-        private void SaveGameOnSwitch()
-        {
-            try
-            {
-                ShowHUDBigInfo(HUDBigInfoMessage($"Saving..", MessageType.Info, Color.green));
-                if (LocalMultiplayerManager.IsHostWithPlayersInCoop && ReplTools.CanSaveInCoop())
-                {
-                    P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
-                    SaveGame.SaveCoop();                  
-                }
-                if (!LocalMultiplayerManager.IsHostWithPlayersInCoop)
-                {
-                    SaveGame.Save();                    
-                }
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(SaveGameOnSwitch));
-            }
-        }
-
         private void HandleException(Exception exc, string methodName)
         {           
             string info =
@@ -1393,8 +1387,7 @@ namespace ModManager
         {
             try
             {
-                ToggleShowUI(8);
-                
+                EnableCursor(true);
                 string description = $"Are you sure you want to switch to  {(LocalMultiplayerManager.IsMultiplayerGameModeActive == true ? "multiplayer?\nYour current game will first be saved, if possible.\n"  : "singleplayer?\nYour current game and of coop players' games will first be saved, if possible.\n")}\n";
                 YesNoDialog switchYesNoDialog = GreenHellGame.GetYesNoDialog();
                 switchYesNoDialog.Show(this, DialogWindowType.YesNo, $"{ModName} Info", description, true, false);
@@ -1408,15 +1401,16 @@ namespace ModManager
 
         public void OnYesFromDialog()
         {
-            SaveGameOnSwitch();
-            LocalMultiplayerManager.SwitchGameMode();
+            ShowHUDBigInfo(HUDBigInfoMessage($"Saving..", MessageType.Info, Color.green));
+            P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());
+            LocalMultiplayerManager.SaveGameOnSwitch();
+            LocalMultiplayerManager.SwitchGameMode(EnableDebugMode);
             EnableCursor(false);
         }
 
         public void OnNoFromDialog()
         {
             LocalMultiplayerManager.IsMultiplayerGameModeActive = !LocalMultiplayerManager.IsMultiplayerGameModeActive;
-            ToggleShowUI(8);
             EnableCursor(false);
         }
 
