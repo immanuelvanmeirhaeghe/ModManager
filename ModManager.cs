@@ -237,21 +237,49 @@ namespace ModManager
         public void ShowMenuLogScreen()
         {
             try
-            {
-                string baseLogPath = Application.dataPath.Replace("GH_Data", "Logs");
-                string[] modNamesList = LocalModdingManager.ModNamesList;
-                string[] logFiles = new string[modNamesList.Length];
-                for (int i = 0; i < modNamesList.Length; i++)
-                {
-                    logFiles[i] = Path.Combine(baseLogPath, $"{modNamesList[i]}.log");
-                }
-                MenuLogScreen logScreen = new MenuLogScreen(modNamesList);
-                logScreen.Show();
+            {              
+                Rect MenuLogScreen = new Rect(0f, 0f, 85f, 150f);
+                MenuLogScreen = GUILayout.Window(
+                    MenuLogScreen.GetHashCode(),
+                    MenuLogScreen,
+                    InitMenuLogScreen,
+                    nameof(MenuLogScreen), 
+                    GUI.skin.window,
+                    GUILayout.ExpandWidth(true),
+                    GUILayout.MinWidth(ModManagerScreenMinWidth),
+                    GUILayout.MaxWidth(ModManagerScreenMaxWidth),
+                    GUILayout.ExpandHeight(true),
+                    GUILayout.MinHeight(ModManagerScreenMinHeight),
+                    GUILayout.MaxHeight(ModManagerScreenMaxHeight));
+
             }
             catch (Exception exc)
             {
                 HandleException(exc, nameof(ShowMenuLogScreen));
             }
+        }
+
+        private void InitMenuLogScreen(int windowId)
+        {
+            string baseLogPath = Application.dataPath.Replace("GH_Data", "Logs");
+            string[] modNamesList = LocalModdingManager.ModNamesList;
+            string[] logFiles = new string[modNamesList.Length];
+            string text = string.Empty;
+            for (int i = 0; i < modNamesList.Length; i++)
+            {
+                logFiles[i] = Path.Combine(baseLogPath, $"{modNamesList[i]}.log");
+                if (File.Exists(logFiles[i]))
+                {
+                    text += File.ReadAllText(logFiles[i]);
+                }
+            }
+
+            using (new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                GUI.backgroundColor = Color.black;
+                GUILayout.TextArea(text, GUI.skin.textArea, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true) );
+            }
+            GUI.backgroundColor = LocalStylingManager.DefaultBackGroundColor;
         }
 
         private void EnableCursor(bool blockPlayer = false)

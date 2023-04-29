@@ -365,7 +365,6 @@
     <Compile Include="Managers\MultiplayerManager.cs" />
     <Compile Include="Managers\ModdingManager.cs" />
     <Compile Include="Managers\StylingManager.cs" />
-    <Compile Include="MenuLogScreen.cs" />
     <Compile Include="ModManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
